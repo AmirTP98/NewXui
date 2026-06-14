@@ -68,10 +68,10 @@ type Setting struct {
 }
 
 type Client struct {
-	ID         string `json:"id"`
-	Password   string `json:"password"`
-	Flow       string `json:"flow"`
-	Email      string `json:"email"`
+	ID         string `json:"id" form:"id"`
+	Password   string `json:"password" form:"password"`
+	Flow       string `json:"flow" form:"flow"`
+	Email      string `json:"email" form:"email"`
 	TotalGB    int64  `json:"totalGB" form:"totalGB"`
 	ExpiryTime int64  `json:"expiryTime" form:"expiryTime"`
 	Enable     bool   `json:"enable" form:"enable"`

@@ -10,6 +10,7 @@ type APIController struct {
 	BaseController
 	inboundController *InboundController
 	serverController  *ServerController
+	nodeController    *NodeController
 	Tgbot             service.Tgbot
 }
 
@@ -27,6 +28,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 
 	a.inboundApi(api)
 	a.serverApi(api)
+	a.nodeApi(api)
 }
 
 func (a *APIController) inboundApi(api *gin.RouterGroup) {
@@ -88,6 +90,36 @@ func (a *APIController) serverApi(api *gin.RouterGroup) {
 
 	for _, route := range serverRoutes {
 		serverApi.Handle(route.Method, route.Path, route.Handler)
+	}
+}
+
+func (a *APIController) nodeApi(api *gin.RouterGroup) {
+	nodesApi := api.Group("/nodes")
+
+	a.nodeController = &NodeController{}
+
+	nodeRoutes := []struct {
+		Method  string
+		Path    string
+		Handler gin.HandlerFunc
+	}{
+		{"GET", "/", a.nodeController.getNodes},
+		{"GET", "/get/:id", a.nodeController.getNode},
+		{"POST", "/add", a.nodeController.addNode},
+		{"POST", "/update/:id", a.nodeController.updateNode},
+		{"POST", "/del/:id", a.nodeController.delNode},
+		{"POST", "/test/:id", a.nodeController.testNode},
+		{"GET", "/outboundTags", a.nodeController.getOutboundTags},
+		{"GET", "/sharedInbound", a.nodeController.getSharedConfig},
+		{"POST", "/sharedInbound/create", a.nodeController.createSharedInbound},
+		{"POST", "/sharedClient/create", a.nodeController.createSharedClient},
+		{"POST", "/sharedClient/update", a.nodeController.updateSharedClient},
+		{"GET", "/trafficSyncInterval", a.nodeController.getTrafficSyncInterval},
+		{"POST", "/trafficSyncInterval", a.nodeController.setTrafficSyncInterval},
+	}
+
+	for _, route := range nodeRoutes {
+		nodesApi.Handle(route.Method, route.Path, route.Handler)
 	}
 }
 

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+{{template "head" .}}
+<style>
+    @media (min-width: 769px) {
+        .ant-layout-content {
+            margin: 24px 16px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .ant-card-body {
+            padding: .5rem;
+        }
+    }
+
+    .node-card {
+        margin-bottom: .5rem;
+    }
+
+    .result-ok {
+        color: #52c41a;
+    }
+
+    .result-fail {
+        color: #f5222d;
+    }
+</style>
+
+<body>
+<a-layout id="app" v-cloak :class="themeSwitcher.currentTheme">
+    {{ template "commonSider" . }}
+    <a-layout id="content-layout">
+        <a-layout-content>
+            <a-spin :spinning="spinning" :delay="500" tip='{{ i18n "loading"}}'>
+                <a-space direction="vertical" style="width:100%">
+
+                    <a-card class="node-card" hoverable :title='{{ i18n "pages.nodes.nodeList" }}'>
+                        <template slot="extra">
+                            <a-button type="primary" icon="plus" @click="openAddNode">{{ i18n "pages.nodes.addNode" }}</a-button>
+                        </template>
+                        <a-table :columns="nodeColumns" :data-source="nodes" :pagination="false" row-key="id" :scroll="{ x: true }">
+                            <template slot="status" slot-scope="text, node">
+                                <a-tooltip>
+                                    <template slot="title">[[ node.lastError || statusText(node.status) ]]</template>
+                                    <a-badge :status="statusBadge(node.status)" :text="statusText(node.status)"></a-badge>
+                                </a-tooltip>
+                            </template>
+                            <template slot="proxyMode" slot-scope="text, node">
+                                [[ routeText(node) ]]
+                            </template>
+                            <template slot="enable" slot-scope="text, node">
+                                <a-switch :checked="node.enable" @change="toggleEnable(node)"></a-switch>
+                            </template>
+                            <template slot="action" slot-scope="text, node">
+                                <a-button-group>
+                                    <a-button icon="reload" :loading="testingNodeId === node.id" @click="testNode(node)">{{ i18n "pages.nodes.test" }}</a-button>
+                                    <a-button icon="edit" @click="openEditNode(node)"></a-button>
+                                    <a-button icon="delete" type="danger" @click="deleteNode(node)"></a-button>
+                                </a-button-group>
+                            </template>
+                        </a-table>
+                        <a-empty v-if="nodes.length === 0" :description='{{ i18n "pages.nodes.noNodes" }}'></a-empty>
+                    </a-card>
+
+                    <a-card class="node-card" hoverable :title='{{ i18n "pages.nodes.sharedInbound" }}'>
+                        <p>{{ i18n "pages.nodes.sharedInboundDesc" }}</p>
+                        <a-alert v-if="sharedConfig.inbound" type="info" show-icon style="margin-bottom: 10px">
+                            <template slot="message">
+                                {{ i18n "pages.nodes.currentSharedInbound" }}:
+                                [[ sharedConfig.inbound.remark ]] ([[ sharedConfig.inbound.protocol ]], {{ i18n "pages.nodes.port" }}: [[ sharedConfig.inbound.port ]])
+                            </template>
+                            <template slot="description">
+                                <a-tag v-for="node in nodes" :key="node.id" :color="isPushed(node.id) ? 'green' : 'red'">
+                                    [[ node.remark ]]: [[ isPushed(node.id) ? '{{ i18n "pages.nodes.pushed" }}' : '{{ i18n "pages.nodes.notPushed" }}' ]]
+                                </a-tag>
+                            </template>
+                        </a-alert>
+                        <a-form-model layout="vertical">
+                            <a-row :gutter="16">
+                                <a-col :xs="24" :sm="12">
+                                    <a-form-model-item label='{{ i18n "pages.nodes.remark" }}'>
+                                        <a-input v-model="sharedInboundForm.remark"></a-input>
+                                    </a-form-model-item>
+                                </a-col>
+                                <a-col :xs="24" :sm="6">
+                                    <a-form-model-item label='{{ i18n "pages.nodes.protocol" }}'>
+                                        <a-select v-model="sharedInboundForm.protocol" :dropdown-class-name="themeSwitcher.currentTheme">
+                                            <a-select-option value="vless">VLESS</a-select-option>
+                                            <a-select-option value="vmess">VMess</a-select-option>
+                                            <a-select-option value="trojan">Trojan</a-select-option>
+                                            <a-select-option value="shadowsocks">Shadowsocks</a-select-option>
+                                        </a-select>
+                                    </a-form-model-item>
+                                </a-col>
+                                <a-col :xs="24" :sm="6">
+                                    <a-form-model-item label='{{ i18n "pages.nodes.port" }}'>
+                                        <a-input-number v-model="sharedInboundForm.port" :min="1" :max="65535" style="width: 100%"></a-input-number>
+                                    </a-form-model-item>
+                                </a-col>
+                            </a-row>
+                            <a-row :gutter="16">
+                                <a-col :xs="24" :sm="8">
+                                    <a-form-model-item label='{{ i18n "pages.nodes.settings" }}'>
+                                        <a-textarea v-model="sharedInboundForm.settings" :auto-size="{ minRows: 4, maxRows: 10 }"></a-textarea>
+                                    </a-form-model-item>
+                                </a-col>
+                                <a-col :xs="24" :sm="8">
+                                    <a-form-model-item label='{{ i18n "pages.nodes.streamSettings" }}'>
+                                        <a-textarea v-model="sharedInboundForm.streamSettings" :auto-size="{ minRows: 4, maxRows: 10 }"></a-textarea>
+                                    </a-form-model-item>
+                                </a-col>
+                                <a-col :xs="24" :sm="8">
+                                    <a-form-model-item label='{{ i18n "pages.nodes.sniffing" }}'>
+                                        <a-textarea v-model="sharedInboundForm.sniffing" :auto-size="{ minRows: 4, maxRows: 10 }"></a-textarea>
+                                    </a-form-model-item>
+                                </a-col>
+                            </a-row>
+                            <a-button type="primary" @click="createSharedInbound">{{ i18n "pages.nodes.createOnAllNodes" }}</a-button>
+                        </a-form-model>
+                        <a-divider v-if="inboundResults.length > 0">{{ i18n "pages.nodes.results" }}</a-divider>
+                        <a-list v-if="inboundResults.length > 0" size="small" :data-source="inboundResults" bordered>
+                            <a-list-item slot="renderItem" slot-scope="item">
+                                <span :class="item.success ? 'result-ok' : 'result-fail'">
+                                    <a-icon :type="item.success ? 'check-circle' : 'close-circle'"></a-icon>
+                                    [[ item.remark ]] [[ item.success ? '' : ('- ' + item.error) ]]
+                                </span>
+                            </a-list-item>
+                        </a-list>
+                    </a-card>
+
+                    <a-card class="node-card" hoverable v-if="sharedConfig.inbound" :title='{{ i18n "pages.nodes.sharedClient" }}'>
+                        <p>{{ i18n "pages.nodes.sharedClientDesc" }}</p>
+                        <a-form-model layout="vertical">
+                            <a-row :gutter="16">
+                                <a-col :xs="24" :sm="8">
+                                    <a-form-model-item label='{{ i18n "pages.nodes.email" }}'>
+                                        <a-input v-model="sharedClientForm.email"></a-input>
+                                    </a-form-model-item>
+                                </a-col>
+                                <a-col :xs="24" :sm="10">
+                                    <a-form-model-item label='{{ i18n "pages.nodes.uuid" }}'>
+                                        <a-input v-model="sharedClientForm.id">
+                                            <a-icon slot="addonAfter" type="sync" @click="sharedClientForm.id = RandomUtil.randomUUID()" style="cursor: pointer"></a-icon>
+                                        </a-input>
+                                    </a-form-model-item>
+                                </a-col>
+                                <a-col :xs="12" :sm="3">
+                                    <a-form-model-item label='{{ i18n "pages.nodes.totalGB" }}'>
+                                        <a-input-number v-model.number="sharedClientForm._totalGB" :min="0" style="width: 100%"></a-input-number>
+                                    </a-form-model-item>
+                                </a-col>
+                                <a-col :xs="12" :sm="3">
+                                    <a-form-model-item label='{{ i18n "enable" }}'>
+                                        <br>
+                                        <a-switch v-model="sharedClientForm.enable"></a-switch>
+                                    </a-form-model-item>
+                                </a-col>
+                            </a-row>
+                            <a-row :gutter="16">
+                                <a-col :xs="24" :sm="8">
+                                    <a-form-model-item label='{{ i18n "pages.nodes.expireDate" }}'>
+                                        <a-date-picker :show-time="{ format: 'HH:mm:ss' }" format="YYYY-MM-DD HH:mm:ss"
+                                                        :dropdown-class-name="themeSwitcher.currentTheme"
+                                                        style="width: 100%"
+                                                        v-model="sharedClientForm._expiryTime"></a-date-picker>
+                                    </a-form-model-item>
+                                </a-col>
+                            </a-row>
+                            <a-button type="primary" v-if="!sharedConfig.client" @click="createSharedClient">{{ i18n "pages.nodes.createSharedClient" }}</a-button>
+                            <a-button type="primary" v-else @click="updateSharedClient">{{ i18n "pages.nodes.updateSharedClient" }}</a-button>
+                        </a-form-model>
+                        <a-divider v-if="clientResults.length > 0">{{ i18n "pages.nodes.results" }}</a-divider>
+                        <a-list v-if="clientResults.length > 0" size="small" :data-source="clientResults" bordered>
+                            <a-list-item slot="renderItem" slot-scope="item">
+                                <span :class="item.success ? 'result-ok' : 'result-fail'">
+                                    <a-icon :type="item.success ? 'check-circle' : 'close-circle'"></a-icon>
+                                    [[ item.remark ]] [[ item.success ? '' : ('- ' + item.error) ]]
+                                </span>
+                            </a-list-item>
+                        </a-list>
+                    </a-card>
+
+                    <a-card class="node-card" hoverable :title='{{ i18n "pages.nodes.trafficSync" }}'>
+                        <p>{{ i18n "pages.nodes.trafficSyncDesc" }}</p>
+                        <a-input-number v-model="trafficSyncInterval" :min="5" style="margin-right: 10px"></a-input-number>
+                        <a-button type="primary" @click="saveTrafficSyncInterval">{{ i18n "pages.nodes.save" }}</a-button>
+                    </a-card>
+
+                </a-space>
+
+                <a-modal v-model="nodeModal.visible"
+                         :title="nodeModal.isEdit ? '{{ i18n "pages.nodes.editNode" }}' : '{{ i18n "pages.nodes.addNode" }}'"
+                         :class="themeSwitcher.currentTheme"
+                         :confirm-loading="nodeModal.confirmLoading"
+                         @ok="saveNode"
+                         centered>
+                    <a-form-model layout="vertical">
+                        <a-form-model-item label='{{ i18n "pages.nodes.remark" }}'>
+                            <a-input v-model="nodeModal.node.remark"></a-input>
+                        </a-form-model-item>
+                        <a-form-model-item label='{{ i18n "pages.nodes.address" }}' :help='{{ i18n "pages.nodes.addressDesc" }}'>
+                            <a-input v-model="nodeModal.node.address" placeholder="https://1.2.3.4:54321"></a-input>
+                        </a-form-model-item>
+                        <a-form-model-item label='{{ i18n "pages.nodes.basePath" }}' :help='{{ i18n "pages.nodes.basePathDesc" }}'>
+                            <a-input v-model="nodeModal.node.basePath" placeholder="/xxxxxxxxx/"></a-input>
+                        </a-form-model-item>
+                        <a-row :gutter="16">
+                            <a-col :span="12">
+                                <a-form-model-item label='{{ i18n "pages.nodes.username" }}'>
+                                    <a-input v-model="nodeModal.node.username"></a-input>
+                                </a-form-model-item>
+                            </a-col>
+                            <a-col :span="12">
+                                <a-form-model-item label='{{ i18n "pages.nodes.password" }}'>
+                                    <a-input-password v-model="nodeModal.node.password"></a-input-password>
+                                </a-form-model-item>
+                            </a-col>
+                        </a-row>
+                        <a-form-model-item label='{{ i18n "pages.nodes.connectionRoute" }}'>
+                            <a-radio-group v-model="nodeModal.node.proxyMode" button-style="solid">
+                                <a-radio-button :value="ProxyModes.NONE">{{ i18n "pages.nodes.routeDirect" }}</a-radio-button>
+                                <a-radio-button :value="ProxyModes.PROXY_URL">{{ i18n "pages.nodes.routeProxyUrl" }}</a-radio-button>
+                                <a-radio-button :value="ProxyModes.OUTBOUND">{{ i18n "pages.nodes.routeOutbound" }}</a-radio-button>
+                            </a-radio-group>
+                        </a-form-model-item>
+                        <a-form-model-item v-if="nodeModal.node.proxyMode === ProxyModes.PROXY_URL"
+                                            label='{{ i18n "pages.nodes.proxyUrl" }}' :help='{{ i18n "pages.nodes.proxyUrlDesc" }}'>
+                            <a-input v-model="nodeModal.node.proxyUrl" placeholder="http://user:pass@host:port"></a-input>
+                        </a-form-model-item>
+                        <a-form-model-item v-if="nodeModal.node.proxyMode === ProxyModes.OUTBOUND"
+                                            label='{{ i18n "pages.nodes.outboundTag" }}' :help='{{ i18n "pages.nodes.outboundTagDesc" }}'>
+                            <a-select v-model="nodeModal.node.outboundTag" :dropdown-class-name="themeSwitcher.currentTheme">
+                                <a-select-option v-for="tag in outboundTags" :key="tag" :value="tag">[[ tag ]]</a-select-option>
+                            </a-select>
+                        </a-form-model-item>
+                        <a-form-model-item label='{{ i18n "pages.nodes.enable" }}'>
+                            <a-switch v-model="nodeModal.node.enable"></a-switch>
+                        </a-form-model-item>
+                    </a-form-model>
+                </a-modal>
+            </a-spin>
+        </a-layout-content>
+    </a-layout>
+</a-layout>
+{{template "js" .}}
+<script src="{{ .base_path }}assets/js/model/node.js?{{ .cur_ver }}"></script>
+{{template "component/themeSwitcher" .}}
+<script>
+    const app = new Vue({
+        delimiters: ['[[', ']]'],
+        el: '#app',
+        data: {
+            siderDrawer,
+            themeSwitcher,
+            spinning: false,
+            ProxyModes,
+            NodeStatus,
+            RandomUtil,
+            nodes: [],
+            outboundTags: [],
+            testingNodeId: null,
+            nodeModal: {
+                visible: false,
+                confirmLoading: false,
+                isEdit: false,
+                node: new XNode(),
+            },
+            sharedConfig: { inbound: null, maps: [], client: null },
+            sharedInboundForm: {
+                remark: 'shared-inbound',
+                protocol: 'vless',
+                port: RandomUtil.randomIntRange(10000, 60000),
+                settings: JSON.stringify({ clients: [], decryption: 'none' }, null, 2),
+                streamSettings: JSON.stringify({ network: 'tcp', security: 'none' }, null, 2),
+                sniffing: JSON.stringify({ enabled: true, destOverride: ['http', 'tls', 'quic'] }, null, 2),
+            },
+            sharedClientForm: new SharedClient(),
+            inboundResults: [],
+            clientResults: [],
+            trafficSyncInterval: 60,
+            nodeColumns: [
+                { title: '{{ i18n "pages.nodes.remark" }}', dataIndex: 'remark', key: 'remark' },
+                { title: '{{ i18n "pages.nodes.address" }}', dataIndex: 'address', key: 'address' },
+                { title: '{{ i18n "pages.nodes.status" }}', key: 'status', scopedSlots: { customRender: 'status' } },
+                { title: '{{ i18n "pages.nodes.connectionRoute" }}', key: 'proxyMode', scopedSlots: { customRender: 'proxyMode' } },
+                { title: '{{ i18n "pages.nodes.enable" }}', key: 'enable', scopedSlots: { customRender: 'enable' } },
+                { title: '{{ i18n "pages.nodes.action" }}', key: 'action', scopedSlots: { customRender: 'action' } },
+            ],
+        },
+        methods: {
+            async getNodes() {
+                const msg = await HttpUtil.get('/xui/API/nodes/');
+                if (!msg.success) return;
+                this.nodes = (msg.obj || []).map(n => new XNode(n));
+            },
+            async getOutboundTags() {
+                const msg = await HttpUtil.get('/xui/API/nodes/outboundTags');
+                if (!msg.success) return;
+                this.outboundTags = msg.obj || [];
+            },
+            openAddNode() {
+                this.nodeModal.isEdit = false;
+                this.nodeModal.node = new XNode();
+                this.nodeModal.visible = true;
+            },
+            openEditNode(node) {
+                this.nodeModal.isEdit = true;
+                this.nodeModal.node = new XNode(node);
+                this.nodeModal.visible = true;
+            },
+            async saveNode() {
+                this.nodeModal.confirmLoading = true;
+                const node = this.nodeModal.node;
+                let msg;
+                if (this.nodeModal.isEdit) {
+                    msg = await HttpUtil.post('/xui/API/nodes/update/' + node.id, node);
+                } else {
+                    msg = await HttpUtil.post('/xui/API/nodes/add', node);
+                }
+                this.nodeModal.confirmLoading = false;
+                if (msg.success) {
+                    this.nodeModal.visible = false;
+                    await this.getNodes();
+                }
+            },
+            deleteNode(node) {
+                const self = this;
+                this.$confirm({
+                    title: '{{ i18n "pages.nodes.deleteNode" }}',
+                    content: '{{ i18n "pages.nodes.deleteNodeContent" }}',
+                    class: themeSwitcher.currentTheme,
+                    okText: '{{ i18n "delete" }}',
+                    cancelText: '{{ i18n "cancel" }}',
+                    async onOk() {
+                        const msg = await HttpUtil.post('/xui/API/nodes/del/' + node.id);
+                        if (msg.success) {
+                            await self.getNodes();
+                            await self.getSharedConfig();
+                        }
+                    },
+                });
+            },
+            async toggleEnable(node) {
+                node.enable = !node.enable;
+                await HttpUtil.post('/xui/API/nodes/update/' + node.id, node);
+                await this.getNodes();
+            },
+            async testNode(node) {
+                this.testingNodeId = node.id;
+                await HttpUtil.post('/xui/API/nodes/test/' + node.id);
+                this.testingNodeId = null;
+                await this.getNodes();
+            },
+            statusBadge(status) {
+                switch (status) {
+                    case NodeStatus.ONLINE: return 'success';
+                    case NodeStatus.OFFLINE: return 'error';
+                    default: return 'default';
+                }
+            },
+            statusText(status) {
+                switch (status) {
+                    case NodeStatus.ONLINE: return '{{ i18n "pages.nodes.statusOnline" }}';
+                    case NodeStatus.OFFLINE: return '{{ i18n "pages.nodes.statusOffline" }}';
+                    default: return '{{ i18n "pages.nodes.statusUnknown" }}';
+                }
+            },
+            routeText(node) {
+                switch (node.proxyMode) {
+                    case ProxyModes.PROXY_URL: return '{{ i18n "pages.nodes.routeProxyUrl" }}';
+                    case ProxyModes.OUTBOUND: return '{{ i18n "pages.nodes.routeOutbound" }}' + (node.outboundTag ? (' (' + node.outboundTag + ')') : '');
+                    default: return '{{ i18n "pages.nodes.routeDirect" }}';
+                }
+            },
+            isPushed(nodeId) {
+                return (this.sharedConfig.maps || []).some(m => m.nodeId === nodeId);
+            },
+            async getSharedConfig() {
+                const msg = await HttpUtil.get('/xui/API/nodes/sharedInbound');
+                if (!msg.success) return;
+                this.sharedConfig = msg.obj || { inbound: null, maps: [], client: null };
+                if (this.sharedConfig.client) {
+                    this.sharedClientForm = new SharedClient(this.sharedConfig.client);
+                }
+            },
+            async createSharedInbound() {
+                let settings, streamSettings, sniffing;
+                try {
+                    settings = JSON.parse(this.sharedInboundForm.settings);
+                    streamSettings = JSON.parse(this.sharedInboundForm.streamSettings);
+                    sniffing = JSON.parse(this.sharedInboundForm.sniffing);
+                } catch (e) {
+                    this.$message.error('{{ i18n "pages.nodes.invalidJson" }}');
+                    return;
+                }
+                this.spinning = true;
+                const msg = await HttpUtil.post('/xui/API/nodes/sharedInbound/create', {
+                    remark: this.sharedInboundForm.remark,
+                    protocol: this.sharedInboundForm.protocol,
+                    port: this.sharedInboundForm.port,
+                    settings: JSON.stringify(settings),
+                    streamSettings: JSON.stringify(streamSettings),
+                    sniffing: JSON.stringify(sniffing),
+                });
+                this.spinning = false;
+                if (msg.success) {
+                    this.inboundResults = msg.obj || [];
+                    await this.getSharedConfig();
+                }
+            },
+            async createSharedClient() {
+                this.spinning = true;
+                const msg = await HttpUtil.post('/xui/API/nodes/sharedClient/create', this.sharedClientForm.toClient());
+                this.spinning = false;
+                if (msg.success) {
+                    this.clientResults = msg.obj || [];
+                    await this.getSharedConfig();
+                }
+            },
+            async updateSharedClient() {
+                this.spinning = true;
+                const msg = await HttpUtil.post('/xui/API/nodes/sharedClient/update', this.sharedClientForm.toClient());
+                this.spinning = false;
+                if (msg.success) {
+                    this.clientResults = msg.obj || [];
+                    await this.getSharedConfig();
+                }
+            },
+            async getTrafficSyncInterval() {
+                const msg = await HttpUtil.get('/xui/API/nodes/trafficSyncInterval');
+                if (!msg.success) return;
+                this.trafficSyncInterval = msg.obj;
+            },
+            async saveTrafficSyncInterval() {
+                await HttpUtil.post('/xui/API/nodes/trafficSyncInterval', { interval: this.trafficSyncInterval });
+            },
+        },
+        async mounted() {
+            this.spinning = true;
+            await Promise.all([
+                this.getNodes(),
+                this.getOutboundTags(),
+                this.getSharedConfig(),
+                this.getTrafficSyncInterval(),
+            ]);
+            this.spinning = false;
+        },
+    });
+</script>
+</body>
+</html>
