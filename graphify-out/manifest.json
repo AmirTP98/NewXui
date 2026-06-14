@@ -1,0 +1,867 @@
+{
+  "D:\\tmp\\xui\\alireza\\.claude\\settings.local.json": {
+    "mtime": 1778025350.614312,
+    "ast_hash": "69a0805a3a99fa64b54b0d29708842ba",
+    "semantic_hash": "69a0805a3a99fa64b54b0d29708842ba"
+  },
+  "D:\\tmp\\xui\\alireza\\DockerInitFiles.sh": {
+    "mtime": 1772154710.0,
+    "ast_hash": "ac8e55ed0c548588627b604b751c44c6",
+    "semantic_hash": "ac8e55ed0c548588627b604b751c44c6"
+  },
+  "D:\\tmp\\xui\\alireza\\add_external_proxy.py": {
+    "mtime": 1780065434.349972,
+    "ast_hash": "20b3bc62ef1024816244087c1ead9b3f",
+    "semantic_hash": "20b3bc62ef1024816244087c1ead9b3f"
+  },
+  "D:\\tmp\\xui\\alireza\\config\\config.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "e008649639bc72aed776aa70c7c5f83b",
+    "semantic_hash": "e008649639bc72aed776aa70c7c5f83b"
+  },
+  "D:\\tmp\\xui\\alireza\\database\\db.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "1df9353957f06713d4b7a3c939f5a716",
+    "semantic_hash": "1df9353957f06713d4b7a3c939f5a716"
+  },
+  "D:\\tmp\\xui\\alireza\\database\\model\\model.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "fa1e479400dcb721892f177ca896c526",
+    "semantic_hash": "fa1e479400dcb721892f177ca896c526"
+  },
+  "D:\\tmp\\xui\\alireza\\install.sh": {
+    "mtime": 1772154710.0,
+    "ast_hash": "9accc25a3ea95d390b9eeaa1a170c43c",
+    "semantic_hash": "9accc25a3ea95d390b9eeaa1a170c43c"
+  },
+  "D:\\tmp\\xui\\alireza\\logger\\logger.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "1785b1a65922c1c3c403fde72253e1aa",
+    "semantic_hash": "1785b1a65922c1c3c403fde72253e1aa"
+  },
+  "D:\\tmp\\xui\\alireza\\main.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "05b404c68c861ad9ab86b3a43f8330af",
+    "semantic_hash": "05b404c68c861ad9ab86b3a43f8330af"
+  },
+  "D:\\tmp\\xui\\alireza\\sub\\default.json": {
+    "mtime": 1772154710.0,
+    "ast_hash": "83f0981b8b05ddcf85ece96c1c92e09e",
+    "semantic_hash": "83f0981b8b05ddcf85ece96c1c92e09e"
+  },
+  "D:\\tmp\\xui\\alireza\\sub\\sub.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "16afd8d06920ae92ef9e4d5008f83f31",
+    "semantic_hash": "16afd8d06920ae92ef9e4d5008f83f31"
+  },
+  "D:\\tmp\\xui\\alireza\\sub\\subController.go": {
+    "mtime": 1776024382.5294533,
+    "ast_hash": "2b2dafae5345f2a8a7def7d724a30668",
+    "semantic_hash": "2b2dafae5345f2a8a7def7d724a30668"
+  },
+  "D:\\tmp\\xui\\alireza\\sub\\subJsonService.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "db732a1cab3258562596ebd51b0e794d",
+    "semantic_hash": "db732a1cab3258562596ebd51b0e794d"
+  },
+  "D:\\tmp\\xui\\alireza\\sub\\subService.go": {
+    "mtime": 1779972202.6598806,
+    "ast_hash": "26d293ff0886f0e4d2ea12509baf3c69",
+    "semantic_hash": "26d293ff0886f0e4d2ea12509baf3c69"
+  },
+  "D:\\tmp\\xui\\alireza\\sub\\subTemplate.go": {
+    "mtime": 1777580991.2572072,
+    "ast_hash": "ec69be4520fab823c5e96e4a82af1798",
+    "semantic_hash": "ec69be4520fab823c5e96e4a82af1798"
+  },
+  "D:\\tmp\\xui\\alireza\\util\\common\\err.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "32f021a09eccd2cdfbb08ecb4c02c757",
+    "semantic_hash": "32f021a09eccd2cdfbb08ecb4c02c757"
+  },
+  "D:\\tmp\\xui\\alireza\\util\\common\\format.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "eb3cccf9afc5f98cd2c9be082661b431",
+    "semantic_hash": "eb3cccf9afc5f98cd2c9be082661b431"
+  },
+  "D:\\tmp\\xui\\alireza\\util\\common\\multi_error.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "8c01e21936d4bad789dced705d0d9f79",
+    "semantic_hash": "8c01e21936d4bad789dced705d0d9f79"
+  },
+  "D:\\tmp\\xui\\alireza\\util\\json_util\\json.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "bb4bdf196089a45b8602177537760cd6",
+    "semantic_hash": "bb4bdf196089a45b8602177537760cd6"
+  },
+  "D:\\tmp\\xui\\alireza\\util\\random\\random.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "600ab53193d3a693fc25b2bb1436a20c",
+    "semantic_hash": "600ab53193d3a693fc25b2bb1436a20c"
+  },
+  "D:\\tmp\\xui\\alireza\\util\\reflect_util\\reflect.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "c332f2b70578e407b861268ea81e27e9",
+    "semantic_hash": "c332f2b70578e407b861268ea81e27e9"
+  },
+  "D:\\tmp\\xui\\alireza\\util\\sys\\psutil.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "930d5a4ea5bfe44ad9950a9051719b9e",
+    "semantic_hash": "930d5a4ea5bfe44ad9950a9051719b9e"
+  },
+  "D:\\tmp\\xui\\alireza\\util\\sys\\sys_darwin.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "a8c1cf357f3508ae62a585a1b39aa6b4",
+    "semantic_hash": "a8c1cf357f3508ae62a585a1b39aa6b4"
+  },
+  "D:\\tmp\\xui\\alireza\\util\\sys\\sys_linux.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "1fd2d58588eba6c4892d584504758851",
+    "semantic_hash": "1fd2d58588eba6c4892d584504758851"
+  },
+  "D:\\tmp\\xui\\alireza\\util\\sys\\sys_windows.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "cab9cc6b804cc56c2cf26f6fd9eda1b5",
+    "semantic_hash": "cab9cc6b804cc56c2cf26f6fd9eda1b5"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\ant-design-vue@1.7.8\\antd-with-locales.min.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "92da4ecaac3b05d487b0ce86b77772b1",
+    "semantic_hash": "92da4ecaac3b05d487b0ce86b77772b1"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\ant-design-vue@1.7.8\\antd.min.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "bd45442c63419bca20f8a003d9345315",
+    "semantic_hash": "bd45442c63419bca20f8a003d9345315"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\axios\\axios.min.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "0131fefff2fa3b483bd374e4701c204c",
+    "semantic_hash": "0131fefff2fa3b483bd374e4701c204c"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\base64\\base64.min.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "fa942db328eaabea61ed20238e8559ad",
+    "semantic_hash": "fa942db328eaabea61ed20238e8559ad"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\clipboard\\clipboard.min.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "15f52a1ee547f2bdd46e56747332ca2d",
+    "semantic_hash": "15f52a1ee547f2bdd46e56747332ca2d"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\codemirror\\codemirror.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "ec84c015b61c90d5b29303c5b08e0f12",
+    "semantic_hash": "ec84c015b61c90d5b29303c5b08e0f12"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\codemirror\\fold\\brace-fold.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "d56849bd7cce8a10ccb842d50f0de179",
+    "semantic_hash": "d56849bd7cce8a10ccb842d50f0de179"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\codemirror\\fold\\foldcode.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "f520bc635201c451609403065b8bacfa",
+    "semantic_hash": "f520bc635201c451609403065b8bacfa"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\codemirror\\fold\\foldgutter.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "99fa4292c7007f77f7061c6b3a30d3e8",
+    "semantic_hash": "99fa4292c7007f77f7061c6b3a30d3e8"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\codemirror\\hint\\javascript-hint.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "de72c8e29800ee9ae93e5c8a43c6c6a4",
+    "semantic_hash": "de72c8e29800ee9ae93e5c8a43c6c6a4"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\codemirror\\javascript.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "983beea4e8a4942a9d3e92dc097768fe",
+    "semantic_hash": "983beea4e8a4942a9d3e92dc097768fe"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\codemirror\\jshint.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "e3776bb184aab5c55a022b78cc74e9f9",
+    "semantic_hash": "e3776bb184aab5c55a022b78cc74e9f9"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\codemirror\\jsonlint.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "964a17bcb44492e9f47ff77118aa8d2d",
+    "semantic_hash": "964a17bcb44492e9f47ff77118aa8d2d"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\codemirror\\lint\\javascript-lint.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "55eb8a1558ef8c9da7d355a32334d62e",
+    "semantic_hash": "55eb8a1558ef8c9da7d355a32334d62e"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\codemirror\\lint\\lint.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "1a03065838fe9b18a91db3bb2bf0115e",
+    "semantic_hash": "1a03065838fe9b18a91db3bb2bf0115e"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\js\\axios-init.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "bf81bd1b414e05c932747bd7566303c4",
+    "semantic_hash": "bf81bd1b414e05c932747bd7566303c4"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\js\\langs.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "cac2e0ffdf1f1c1569466b92910f8d3e",
+    "semantic_hash": "cac2e0ffdf1f1c1569466b92910f8d3e"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\js\\model\\dbinbound.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "d226f2a633267953272d36d25675a0a6",
+    "semantic_hash": "d226f2a633267953272d36d25675a0a6"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\js\\model\\inbound.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "562b246da40c63b9b11c05d685b0ada3",
+    "semantic_hash": "562b246da40c63b9b11c05d685b0ada3"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\js\\model\\outbound.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "f5a1b50b4133b6a5938e42a8295a3326",
+    "semantic_hash": "f5a1b50b4133b6a5938e42a8295a3326"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\js\\model\\setting.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "5c475c79a4ada1164c7d4716f7add2e3",
+    "semantic_hash": "5c475c79a4ada1164c7d4716f7add2e3"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\js\\util\\common.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "559aa5a5c2a558ec89ef2181a3ad2e36",
+    "semantic_hash": "559aa5a5c2a558ec89ef2181a3ad2e36"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\js\\util\\date-util.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "388a55df5a1d38375824a89251f1df0f",
+    "semantic_hash": "388a55df5a1d38375824a89251f1df0f"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\js\\util\\utils.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "73d2b44f6869df0c3c544a3617bed26e",
+    "semantic_hash": "73d2b44f6869df0c3c544a3617bed26e"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\moment\\moment.min.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "d65dc6d2e619406d105656424573214e",
+    "semantic_hash": "d65dc6d2e619406d105656424573214e"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\qrcode\\qrious.min.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "a377f169ed24f3cfa39b0cc56bfef068",
+    "semantic_hash": "a377f169ed24f3cfa39b0cc56bfef068"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\qs\\qs.min.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "13e81a96338da19e55a3e29a95d0b6b1",
+    "semantic_hash": "13e81a96338da19e55a3e29a95d0b6b1"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\uri\\URI.min.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "5273eba9bdbf90f02ed9961b62cf75f3",
+    "semantic_hash": "5273eba9bdbf90f02ed9961b62cf75f3"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\vue\\vue.common.dev.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "96d7084962e34c098e87e4a9eb80c5f6",
+    "semantic_hash": "96d7084962e34c098e87e4a9eb80c5f6"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\vue\\vue.common.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "f7b7b6f5486b3864706f74ccf7540822",
+    "semantic_hash": "f7b7b6f5486b3864706f74ccf7540822"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\vue\\vue.common.prod.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "52d423b6e598d069f260d83427dd0b51",
+    "semantic_hash": "52d423b6e598d069f260d83427dd0b51"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\vue\\vue.esm.browser.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "ef603ed3b8ff10c101fc1a324b77dd93",
+    "semantic_hash": "ef603ed3b8ff10c101fc1a324b77dd93"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\vue\\vue.esm.browser.min.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "85773b0a4e0dfa617124cccda6055999",
+    "semantic_hash": "85773b0a4e0dfa617124cccda6055999"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\vue\\vue.esm.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "c9c0adc153dc5194ec70e0c6a98187c5",
+    "semantic_hash": "c9c0adc153dc5194ec70e0c6a98187c5"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\vue\\vue.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "80ccbaff5a6645396e933c278bec4699",
+    "semantic_hash": "80ccbaff5a6645396e933c278bec4699"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\vue\\vue.min.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "69737e60d88f9f91c4800039e18d8900",
+    "semantic_hash": "69737e60d88f9f91c4800039e18d8900"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\vue\\vue.runtime.common.dev.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "bf2485c52791249933238fb3e7a75871",
+    "semantic_hash": "bf2485c52791249933238fb3e7a75871"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\vue\\vue.runtime.common.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "4cae640243111eac757de1430cb1ba60",
+    "semantic_hash": "4cae640243111eac757de1430cb1ba60"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\vue\\vue.runtime.common.prod.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "140ce2ed75b756a004cc8deaf77619ab",
+    "semantic_hash": "140ce2ed75b756a004cc8deaf77619ab"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\vue\\vue.runtime.esm.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "f5c731f00ee1b400f8a858c06bca58f9",
+    "semantic_hash": "f5c731f00ee1b400f8a858c06bca58f9"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\vue\\vue.runtime.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "c0b39ea181f3e8609997083ada87fe43",
+    "semantic_hash": "c0b39ea181f3e8609997083ada87fe43"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\vue\\vue.runtime.min.js": {
+    "mtime": 1772154710.0,
+    "ast_hash": "5bfd767482e65c53f05201c387300931",
+    "semantic_hash": "5bfd767482e65c53f05201c387300931"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\assets\\vue\\vue.runtime.mjs": {
+    "mtime": 1772154710.0,
+    "ast_hash": "c833c37dbe811d958c3c0925ea79d460",
+    "semantic_hash": "c833c37dbe811d958c3c0925ea79d460"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\controller\\api.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "acfc3d3688342cbec7d2e4c9095cc6db",
+    "semantic_hash": "acfc3d3688342cbec7d2e4c9095cc6db"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\controller\\base.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "469ee4c0c99e54f0cb6a00b0bf5c2e63",
+    "semantic_hash": "469ee4c0c99e54f0cb6a00b0bf5c2e63"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\controller\\inbound.go": {
+    "mtime": 1779939951.1095126,
+    "ast_hash": "3d5faca2f45b13c21a4be0299ae7a44e",
+    "semantic_hash": "3d5faca2f45b13c21a4be0299ae7a44e"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\controller\\index.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "eccba4b03a74c645d0a4043a1109fe6e",
+    "semantic_hash": "eccba4b03a74c645d0a4043a1109fe6e"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\controller\\server.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "9e91dc9e67033683bc531e6976095555",
+    "semantic_hash": "9e91dc9e67033683bc531e6976095555"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\controller\\setting.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "71e3b5cbd68d31d6d43b2cd1e7cee4a7",
+    "semantic_hash": "71e3b5cbd68d31d6d43b2cd1e7cee4a7"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\controller\\util.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "359af4ede9b3f1a43de7ff358693ccb1",
+    "semantic_hash": "359af4ede9b3f1a43de7ff358693ccb1"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\controller\\xray_setting.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "6f3e963f1360e4942eb70c38f1e38109",
+    "semantic_hash": "6f3e963f1360e4942eb70c38f1e38109"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\controller\\xui.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "8b14ef8fa08162292730922f5900ca4a",
+    "semantic_hash": "8b14ef8fa08162292730922f5900ca4a"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\entity\\entity.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "09e8e035c8abed3dfc5547023b57bb31",
+    "semantic_hash": "09e8e035c8abed3dfc5547023b57bb31"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\global\\global.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "038ecd64b1b4d54df45d6ac79acc0a93",
+    "semantic_hash": "038ecd64b1b4d54df45d6ac79acc0a93"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\job\\check_cpu_usage.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "f07438d868d82340bce49cedbbe60e7a",
+    "semantic_hash": "f07438d868d82340bce49cedbbe60e7a"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\job\\check_xray_running_job.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "b0b806f4e83061c7e62461c2e2b68dd6",
+    "semantic_hash": "b0b806f4e83061c7e62461c2e2b68dd6"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\job\\stats_notify_job.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "a2d5ad22181962f2b7c3935eedbd88bd",
+    "semantic_hash": "a2d5ad22181962f2b7c3935eedbd88bd"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\job\\xray_traffic_job.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "8cd8f9a2569a0d63065a2dc9349c6dcd",
+    "semantic_hash": "8cd8f9a2569a0d63065a2dc9349c6dcd"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\locale\\locale.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "88fddefb02539952aebebebbbd32e8ec",
+    "semantic_hash": "88fddefb02539952aebebebbbd32e8ec"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\middleware\\domainValidator.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "ff6ec3c528f94ae268c3cbb5615ce4ab",
+    "semantic_hash": "ff6ec3c528f94ae268c3cbb5615ce4ab"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\network\\auto_https_conn.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "3443a6ebcd2f83fca085e085e144b78b",
+    "semantic_hash": "3443a6ebcd2f83fca085e085e144b78b"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\network\\auto_https_listener.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "9eec7a089441ea0a37697cbb517aae22",
+    "semantic_hash": "9eec7a089441ea0a37697cbb517aae22"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\service\\config.json": {
+    "mtime": 1772154710.0,
+    "ast_hash": "eb269a48032e24bb1834257f254927df",
+    "semantic_hash": "eb269a48032e24bb1834257f254927df"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\service\\inbound.go": {
+    "mtime": 1779942279.4580255,
+    "ast_hash": "07f514b337b90398d73062506a65cc48",
+    "semantic_hash": "07f514b337b90398d73062506a65cc48"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\service\\panel.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "7eb2d781ddf6f2e3420d458d2db2ac8e",
+    "semantic_hash": "7eb2d781ddf6f2e3420d458d2db2ac8e"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\service\\server.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "d9be40fbcee98212aa5f9abf5ed4b38e",
+    "semantic_hash": "d9be40fbcee98212aa5f9abf5ed4b38e"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\service\\setting.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "af3f56987bded669246b022f19eeeab6",
+    "semantic_hash": "af3f56987bded669246b022f19eeeab6"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\service\\tgbot.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "899196af76a50b3539c973a6e4cbed38",
+    "semantic_hash": "899196af76a50b3539c973a6e4cbed38"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\service\\user.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "997d99af875050711b51f9e9d561cd36",
+    "semantic_hash": "997d99af875050711b51f9e9d561cd36"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\service\\warp.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "aa2bd3e134bb6a5201f8dfaa74ff0fa1",
+    "semantic_hash": "aa2bd3e134bb6a5201f8dfaa74ff0fa1"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\service\\xray.go": {
+    "mtime": 1779939715.2447214,
+    "ast_hash": "9efdbd0a8fe17edc5625f5eba487f5a8",
+    "semantic_hash": "9efdbd0a8fe17edc5625f5eba487f5a8"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\service\\xray_setting.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "41c999e8b848cc5d2accc4be8b3bbb7e",
+    "semantic_hash": "41c999e8b848cc5d2accc4be8b3bbb7e"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\session\\session.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "e428039d227acd6ff98f4929e23faadb",
+    "semantic_hash": "e428039d227acd6ff98f4929e23faadb"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\web.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "4d9b573c22709028ed470a4a2a9fc008",
+    "semantic_hash": "4d9b573c22709028ed470a4a2a9fc008"
+  },
+  "D:\\tmp\\xui\\alireza\\x-ui.sh": {
+    "mtime": 1772154710.0,
+    "ast_hash": "5d6d53466d03ab556da38d886f6b2db1",
+    "semantic_hash": "5d6d53466d03ab556da38d886f6b2db1"
+  },
+  "D:\\tmp\\xui\\alireza\\xray\\api.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "3137e61cf2b1312ea0c171d9d4d3145f",
+    "semantic_hash": "3137e61cf2b1312ea0c171d9d4d3145f"
+  },
+  "D:\\tmp\\xui\\alireza\\xray\\client_traffic.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "d51eb8f68498a8c7fdd118735e2283b1",
+    "semantic_hash": "d51eb8f68498a8c7fdd118735e2283b1"
+  },
+  "D:\\tmp\\xui\\alireza\\xray\\config.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "0f37567bf303555c82d4c531b56f3622",
+    "semantic_hash": "0f37567bf303555c82d4c531b56f3622"
+  },
+  "D:\\tmp\\xui\\alireza\\xray\\inbound.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "9c20276fd03f8d4d4beb6927ea47dc5a",
+    "semantic_hash": "9c20276fd03f8d4d4beb6927ea47dc5a"
+  },
+  "D:\\tmp\\xui\\alireza\\xray\\log_writer.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "a824e00f2c83872f92bed91eeb81ebd1",
+    "semantic_hash": "a824e00f2c83872f92bed91eeb81ebd1"
+  },
+  "D:\\tmp\\xui\\alireza\\xray\\process.go": {
+    "mtime": 1779939703.7330084,
+    "ast_hash": "3794f03dcbc54ca5fae4f05ffd52be76",
+    "semantic_hash": "3794f03dcbc54ca5fae4f05ffd52be76"
+  },
+  "D:\\tmp\\xui\\alireza\\xray\\traffic.go": {
+    "mtime": 1772154710.0,
+    "ast_hash": "3d004a55ec8337f872e488e6c270e64e",
+    "semantic_hash": "3d004a55ec8337f872e488e6c270e64e"
+  },
+  "D:\\tmp\\xui\\alireza\\.github\\FUNDING.yml": {
+    "mtime": 1772154710.0,
+    "ast_hash": "1f0152a78b9e175f31e6241fbcb5e63e",
+    "semantic_hash": "1f0152a78b9e175f31e6241fbcb5e63e"
+  },
+  "D:\\tmp\\xui\\alireza\\.github\\ISSUE_TEMPLATE\\bug_report.md": {
+    "mtime": 1772154710.0,
+    "ast_hash": "ec582995a0037e4756774ff7879edb36",
+    "semantic_hash": "ec582995a0037e4756774ff7879edb36"
+  },
+  "D:\\tmp\\xui\\alireza\\.github\\ISSUE_TEMPLATE\\feature_request.md": {
+    "mtime": 1772154710.0,
+    "ast_hash": "183208d06fb1a5f6d80de9b22521b578",
+    "semantic_hash": "183208d06fb1a5f6d80de9b22521b578"
+  },
+  "D:\\tmp\\xui\\alireza\\.github\\ISSUE_TEMPLATE\\question-template.md": {
+    "mtime": 1772154710.0,
+    "ast_hash": "fc3e9c6cb8bd3195488c792dfde6dbc6",
+    "semantic_hash": "fc3e9c6cb8bd3195488c792dfde6dbc6"
+  },
+  "D:\\tmp\\xui\\alireza\\.github\\workflows\\docker.yml": {
+    "mtime": 1772154710.0,
+    "ast_hash": "a2e1bbcb8c98af3c17260267a37281bf",
+    "semantic_hash": "a2e1bbcb8c98af3c17260267a37281bf"
+  },
+  "D:\\tmp\\xui\\alireza\\.github\\workflows\\release.yml": {
+    "mtime": 1772154710.0,
+    "ast_hash": "8fcab5ee8b42176297c53de45b9b27ac",
+    "semantic_hash": "8fcab5ee8b42176297c53de45b9b27ac"
+  },
+  "D:\\tmp\\xui\\alireza\\CONTRIBUTING.md": {
+    "mtime": 1772154710.0,
+    "ast_hash": "27b3d3ddf705db5fc6a533347ad0cfb0",
+    "semantic_hash": "27b3d3ddf705db5fc6a533347ad0cfb0"
+  },
+  "D:\\tmp\\xui\\alireza\\README.md": {
+    "mtime": 1772154710.0,
+    "ast_hash": "6a672a7b222bf1d8b2e5e4decc0e885e",
+    "semantic_hash": "6a672a7b222bf1d8b2e5e4decc0e885e"
+  },
+  "D:\\tmp\\xui\\alireza\\docker-compose.dev.yml": {
+    "mtime": 1772154710.0,
+    "ast_hash": "0994126f7da8bab29385bb81fa2e754e",
+    "semantic_hash": "0994126f7da8bab29385bb81fa2e754e"
+  },
+  "D:\\tmp\\xui\\alireza\\docker-compose.yml": {
+    "mtime": 1772154710.0,
+    "ast_hash": "ea800b208d58e3554a23251f5dfcafe3",
+    "semantic_hash": "ea800b208d58e3554a23251f5dfcafe3"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\common\\head.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "c736b06d66981a365ab9c106535a104c",
+    "semantic_hash": "c736b06d66981a365ab9c106535a104c"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\common\\js.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "80575b64f71ce0a1f0bcd08b7c324148",
+    "semantic_hash": "80575b64f71ce0a1f0bcd08b7c324148"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\common\\prompt_modal.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "9afaf371de8dfda2a0aee1cdcc1888b8",
+    "semantic_hash": "9afaf371de8dfda2a0aee1cdcc1888b8"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\common\\qrcode_modal.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "0eff46c317251c1d6c692bbfd4e855c2",
+    "semantic_hash": "0eff46c317251c1d6c692bbfd4e855c2"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\common\\text_modal.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "6001ded8db43081e95e50781d763f439",
+    "semantic_hash": "6001ded8db43081e95e50781d763f439"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\login.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "270e22daf08bba81a157cf6db25f08b6",
+    "semantic_hash": "270e22daf08bba81a157cf6db25f08b6"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\client_bulk_modal.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "77ef5a54cbad2edab1d8823443c3455f",
+    "semantic_hash": "77ef5a54cbad2edab1d8823443c3455f"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\client_modal.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "c564088b0bb142bdca4aa23f6a263bc3",
+    "semantic_hash": "c564088b0bb142bdca4aa23f6a263bc3"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\common_sider.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "c620e66ad2a82ebb9e6f24dafff4ef46",
+    "semantic_hash": "c620e66ad2a82ebb9e6f24dafff4ef46"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\component\\setting.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "1e38007d3a985374b37154d4da083cde",
+    "semantic_hash": "1e38007d3a985374b37154d4da083cde"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\component\\themeSwitch.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "b1cb2d750908d2c1722df86147981dd9",
+    "semantic_hash": "b1cb2d750908d2c1722df86147981dd9"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\dns_modal.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "3e4ea429c5d61881df7fd8f57fe46bee",
+    "semantic_hash": "3e4ea429c5d61881df7fd8f57fe46bee"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\fakedns_modal.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "6110fb0c7066d5bbe5191ab7a0ca5360",
+    "semantic_hash": "6110fb0c7066d5bbe5191ab7a0ca5360"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\client.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "e51cbf737fd9a22ee64665ee44a097b5",
+    "semantic_hash": "e51cbf737fd9a22ee64665ee44a097b5"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\inbound.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "55e4ae2f0277da90ac51074adf04d130",
+    "semantic_hash": "55e4ae2f0277da90ac51074adf04d130"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\outbound.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "afa55f497b362ecda352ccff09061365",
+    "semantic_hash": "afa55f497b362ecda352ccff09061365"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\protocol\\dokodemo.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "ba3c8fcfe2244c762c8ae167d2afc0cd",
+    "semantic_hash": "ba3c8fcfe2244c762c8ae167d2afc0cd"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\protocol\\http.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "e39f1dbbd79bb612273f01bc561854fc",
+    "semantic_hash": "e39f1dbbd79bb612273f01bc561854fc"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\protocol\\shadowsocks.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "fc5529fc8087a7d24b082a2ea70f6e12",
+    "semantic_hash": "fc5529fc8087a7d24b082a2ea70f6e12"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\protocol\\socks.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "69eb2916a4f70ae8cb9c9620405d9e42",
+    "semantic_hash": "69eb2916a4f70ae8cb9c9620405d9e42"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\protocol\\trojan.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "48343ecd87310b22871a26fcf7550207",
+    "semantic_hash": "48343ecd87310b22871a26fcf7550207"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\protocol\\tun.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "6ee953dd2a22a9a0561baf8d1b6d4a7b",
+    "semantic_hash": "6ee953dd2a22a9a0561baf8d1b6d4a7b"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\protocol\\vless.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "fc5d080d0d8723c26cb243a9c2f4ba32",
+    "semantic_hash": "fc5d080d0d8723c26cb243a9c2f4ba32"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\protocol\\vmess.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "261037c8645ae86a028dad74f6d2fd37",
+    "semantic_hash": "261037c8645ae86a028dad74f6d2fd37"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\protocol\\wireguard.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "befbe680c3159bd575b22d3309d5c2e7",
+    "semantic_hash": "befbe680c3159bd575b22d3309d5c2e7"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\reality_settings.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "3f23d3359307ee2f19b013098bc13148",
+    "semantic_hash": "3f23d3359307ee2f19b013098bc13148"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\sniffing.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "b0fb9640b0ce817ce9cb577764d695a3",
+    "semantic_hash": "b0fb9640b0ce817ce9cb577764d695a3"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\stream\\external_proxy.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "f74dc9f641cfcf4cce6f913afd116a17",
+    "semantic_hash": "f74dc9f641cfcf4cce6f913afd116a17"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\stream\\stream_finalmask.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "0c5e314841ed786e00e69f3cd32e26e6",
+    "semantic_hash": "0c5e314841ed786e00e69f3cd32e26e6"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\stream\\stream_grpc.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "14648c1815467590c27bf607add19b60",
+    "semantic_hash": "14648c1815467590c27bf607add19b60"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\stream\\stream_httpupgrade.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "bff7ab6219afa6088cb208b0cf4cf222",
+    "semantic_hash": "bff7ab6219afa6088cb208b0cf4cf222"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\stream\\stream_kcp.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "d62f94e8f825b6808b8d714d34a844c8",
+    "semantic_hash": "d62f94e8f825b6808b8d714d34a844c8"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\stream\\stream_settings.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "1311c21d1bc7da529fe7a3f76d5c6c66",
+    "semantic_hash": "1311c21d1bc7da529fe7a3f76d5c6c66"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\stream\\stream_sockopt.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "979cc79034b6a7a2daaf019bf137327a",
+    "semantic_hash": "979cc79034b6a7a2daaf019bf137327a"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\stream\\stream_tcp.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "49526cafaa62a89b9e2d95fcad753258",
+    "semantic_hash": "49526cafaa62a89b9e2d95fcad753258"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\stream\\stream_ws.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "ad823814609e9430ebe9838ce7dfb6d1",
+    "semantic_hash": "ad823814609e9430ebe9838ce7dfb6d1"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\stream\\stream_xhttp.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "bb8a988176afac7a1497ff82896bd337",
+    "semantic_hash": "bb8a988176afac7a1497ff82896bd337"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\form\\tls_settings.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "7f1593be782dedf4d5a362f06916eadd",
+    "semantic_hash": "7f1593be782dedf4d5a362f06916eadd"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\inbound_client_table.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "e1770c42016dbbea15b4808b99bb946e",
+    "semantic_hash": "e1770c42016dbbea15b4808b99bb946e"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\inbound_info_modal.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "b367204aabaf4fae55eb73c1067c8fe5",
+    "semantic_hash": "b367204aabaf4fae55eb73c1067c8fe5"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\inbound_modal.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "a972ac7570ce7ebeae16915ae67fc8c5",
+    "semantic_hash": "a972ac7570ce7ebeae16915ae67fc8c5"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\inbounds.html": {
+    "mtime": 1780197725.692487,
+    "ast_hash": "62bf2d73e1e8aab2694acbddae340816",
+    "semantic_hash": "62bf2d73e1e8aab2694acbddae340816"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\index.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "d59621c6ff6acb1bc9d323e61c654ebf",
+    "semantic_hash": "d59621c6ff6acb1bc9d323e61c654ebf"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\settings.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "620fc1ccde8adcce067e20248ab25e8d",
+    "semantic_hash": "620fc1ccde8adcce067e20248ab25e8d"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\warp_modal.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "47eee2ca570998bee21d11a5c19d1ce2",
+    "semantic_hash": "47eee2ca570998bee21d11a5c19d1ce2"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\xray.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "bc23b0f26e25b8701fd6e7881bf7b033",
+    "semantic_hash": "bc23b0f26e25b8701fd6e7881bf7b033"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\xray_balancer_modal.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "ebf8d04b18b4400b8b7d1aa6d0a7d739",
+    "semantic_hash": "ebf8d04b18b4400b8b7d1aa6d0a7d739"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\xray_outbound_modal.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "65ddee6702fe9825d3460e1ca7b95c93",
+    "semantic_hash": "65ddee6702fe9825d3460e1ca7b95c93"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\xray_reverse_modal.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "8fd6cb0e0a0c307cc2f95de9ad6df774",
+    "semantic_hash": "8fd6cb0e0a0c307cc2f95de9ad6df774"
+  },
+  "D:\\tmp\\xui\\alireza\\web\\html\\xui\\xray_rule_modal.html": {
+    "mtime": 1772154710.0,
+    "ast_hash": "0bd70b67c086dbcf03f3cf34b671dc06",
+    "semantic_hash": "0bd70b67c086dbcf03f3cf34b671dc06"
+  },
+  "D:\\tmp\\xui\\alireza\\windows_files\\readme.txt": {
+    "mtime": 1772154710.0,
+    "ast_hash": "1ef9638818c73f8e61c86c8f2e347c4e",
+    "semantic_hash": "1ef9638818c73f8e61c86c8f2e347c4e"
+  },
+  "D:\\tmp\\xui\\alireza\\media\\inbounds-dark.png": {
+    "mtime": 1772154710.0,
+    "ast_hash": "3bfbd2fa0db4802e7f0bba6ac79a4025",
+    "semantic_hash": "3bfbd2fa0db4802e7f0bba6ac79a4025"
+  },
+  "D:\\tmp\\xui\\alireza\\media\\inbounds.png": {
+    "mtime": 1772154710.0,
+    "ast_hash": "8e1f9d693511bb3ff8fa5511ffec5aa0",
+    "semantic_hash": "8e1f9d693511bb3ff8fa5511ffec5aa0"
+  },
+  "D:\\tmp\\xui\\alireza\\media\\outbounds.png": {
+    "mtime": 1772154710.0,
+    "ast_hash": "2d7e2e7943f1529e5b687dd0a44fbdf0",
+    "semantic_hash": "2d7e2e7943f1529e5b687dd0a44fbdf0"
+  },
+  "D:\\tmp\\xui\\alireza\\media\\rules.png": {
+    "mtime": 1772154710.0,
+    "ast_hash": "cb978ebc592946c7059c524a61abd8b6",
+    "semantic_hash": "cb978ebc592946c7059c524a61abd8b6"
+  },
+  "D:\\tmp\\xui\\alireza\\media\\warp.png": {
+    "mtime": 1772154710.0,
+    "ast_hash": "1557b8857deb7fe93579f565ec690b19",
+    "semantic_hash": "1557b8857deb7fe93579f565ec690b19"
+  }
+}
