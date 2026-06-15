@@ -17,14 +17,6 @@
     .node-card {
         margin-bottom: .5rem;
     }
-
-    .result-ok {
-        color: #52c41a;
-    }
-
-    .result-fail {
-        color: #f5222d;
-    }
 </style>
 
 <body>
@@ -34,6 +26,28 @@
         <a-layout-content>
             <a-spin :spinning="spinning" :delay="500" tip='{{ i18n "loading"}}'>
                 <a-space direction="vertical" style="width:100%">
+
+                    <a-card class="node-card" hoverable title='{{ i18n "pages.nodes.masterInbound" }}'>
+                        <p>{{ i18n "pages.nodes.masterInboundDesc" }}</p>
+                        <a-row :gutter="16">
+                            <a-col :xs="24" :sm="16">
+                                <a-select v-model="selectedMasterId" style="width: 100%"
+                                          :dropdown-class-name="themeSwitcher.currentTheme">
+                                    <a-select-option :value="0">{{ i18n "none" }}</a-select-option>
+                                    <a-select-option v-for="inb in masterConfig.inbounds" :key="inb.id" :value="inb.id">
+                                        [[ inb.remark ]] (#[[ inb.id ]] · [[ inb.protocol ]] · {{ i18n "pages.nodes.port" }} [[ inb.port ]])
+                                    </a-select-option>
+                                </a-select>
+                            </a-col>
+                            <a-col :xs="24" :sm="8">
+                                <a-button type="primary" @click="saveMaster">{{ i18n "pages.nodes.save" }}</a-button>
+                            </a-col>
+                        </a-row>
+                        <a-alert v-if="masterConfig.master" type="success" show-icon style="margin-top: 10px"
+                                 :message="'{{ i18n "pages.nodes.currentMaster" }}: ' + masterConfig.master.remark + ' (' + masterConfig.master.protocol + ')'"></a-alert>
+                        <a-alert v-else type="info" show-icon style="margin-top: 10px"
+                                 message='{{ i18n "pages.nodes.noMaster" }}'></a-alert>
+                    </a-card>
 
                     <a-card class="node-card" hoverable title='{{ i18n "pages.nodes.nodeList" }}'>
                         <template slot="extra">
@@ -79,81 +93,6 @@
                         <a-empty v-if="nodes.length === 0" description='{{ i18n "pages.nodes.noNodes" }}'></a-empty>
                     </a-card>
 
-                    <a-card class="node-card" hoverable title='{{ i18n "pages.nodes.universalInbound" }}'>
-                        <template slot="extra">
-                            <a-button type="primary" icon="form" @click="openInboundTemplate">
-                                [[ sharedConfig.inbound ? '{{ i18n "pages.nodes.editInbound" }}' : '{{ i18n "pages.nodes.defineInbound" }}' ]]
-                            </a-button>
-                        </template>
-                        <p>{{ i18n "pages.nodes.universalInboundDesc" }}</p>
-                        <a-descriptions v-if="sharedConfig.inbound" bordered size="small" :column="1">
-                            <a-descriptions-item label='{{ i18n "pages.nodes.protocol" }}'>[[ sharedConfig.inbound.protocol ]]</a-descriptions-item>
-                            <a-descriptions-item label='{{ i18n "pages.nodes.remark" }}'>[[ sharedConfig.inbound.remark ]]</a-descriptions-item>
-                        </a-descriptions>
-                        <a-empty v-else description='{{ i18n "pages.nodes.noInboundTemplate" }}'></a-empty>
-                        <a-divider v-if="inboundResults.length > 0">{{ i18n "pages.nodes.results" }}</a-divider>
-                        <a-list v-if="inboundResults.length > 0" size="small" :data-source="inboundResults" bordered>
-                            <a-list-item slot="renderItem" slot-scope="item">
-                                <span :class="item.success ? 'result-ok' : 'result-fail'">
-                                    <a-icon :type="item.success ? 'check-circle' : 'close-circle'"></a-icon>
-                                    [[ item.remark ]] [[ item.success ? '' : ('- ' + item.error) ]]
-                                </span>
-                            </a-list-item>
-                        </a-list>
-                    </a-card>
-
-                    <a-card class="node-card" hoverable v-if="sharedConfig.inbound" title='{{ i18n "pages.nodes.sharedClient" }}'>
-                        <p>{{ i18n "pages.nodes.sharedClientDesc" }}</p>
-                        <a-form-model layout="vertical">
-                            <a-row :gutter="16">
-                                <a-col :xs="24" :sm="8">
-                                    <a-form-model-item label='{{ i18n "pages.nodes.email" }}'>
-                                        <a-input v-model="sharedClientForm.email"></a-input>
-                                    </a-form-model-item>
-                                </a-col>
-                                <a-col :xs="24" :sm="10">
-                                    <a-form-model-item label='{{ i18n "pages.nodes.uuid" }}'>
-                                        <a-input v-model="sharedClientForm.id">
-                                            <a-icon slot="addonAfter" type="sync" @click="sharedClientForm.id = RandomUtil.randomUUID()" style="cursor: pointer"></a-icon>
-                                        </a-input>
-                                    </a-form-model-item>
-                                </a-col>
-                                <a-col :xs="12" :sm="3">
-                                    <a-form-model-item label='{{ i18n "pages.nodes.totalGB" }}'>
-                                        <a-input-number v-model.number="sharedClientForm._totalGB" :min="0" style="width: 100%"></a-input-number>
-                                    </a-form-model-item>
-                                </a-col>
-                                <a-col :xs="12" :sm="3">
-                                    <a-form-model-item label='{{ i18n "enable" }}'>
-                                        <br>
-                                        <a-switch v-model="sharedClientForm.enable"></a-switch>
-                                    </a-form-model-item>
-                                </a-col>
-                            </a-row>
-                            <a-row :gutter="16">
-                                <a-col :xs="24" :sm="8">
-                                    <a-form-model-item label='{{ i18n "pages.nodes.expireDate" }}'>
-                                        <a-date-picker :show-time="{ format: 'HH:mm:ss' }" format="YYYY-MM-DD HH:mm:ss"
-                                                        :dropdown-class-name="themeSwitcher.currentTheme"
-                                                        style="width: 100%"
-                                                        v-model="sharedClientForm._expiryTime"></a-date-picker>
-                                    </a-form-model-item>
-                                </a-col>
-                            </a-row>
-                            <a-button type="primary" v-if="!sharedConfig.client" @click="createSharedClient">{{ i18n "pages.nodes.createSharedClient" }}</a-button>
-                            <a-button type="primary" v-else @click="updateSharedClient">{{ i18n "pages.nodes.updateSharedClient" }}</a-button>
-                        </a-form-model>
-                        <a-divider v-if="clientResults.length > 0">{{ i18n "pages.nodes.results" }}</a-divider>
-                        <a-list v-if="clientResults.length > 0" size="small" :data-source="clientResults" bordered>
-                            <a-list-item slot="renderItem" slot-scope="item">
-                                <span :class="item.success ? 'result-ok' : 'result-fail'">
-                                    <a-icon :type="item.success ? 'check-circle' : 'close-circle'"></a-icon>
-                                    [[ item.remark ]] [[ item.success ? '' : ('- ' + item.error) ]]
-                                </span>
-                            </a-list-item>
-                        </a-list>
-                    </a-card>
-
                     <a-card class="node-card" hoverable title='{{ i18n "pages.nodes.trafficSync" }}'>
                         <p>{{ i18n "pages.nodes.trafficSyncDesc" }}</p>
                         <a-input-number v-model="trafficSyncInterval" :min="5" style="margin-right: 10px"></a-input-number>
@@ -169,7 +108,7 @@
                          @ok="saveNode"
                          centered>
                     <a-form-model layout="vertical">
-                        <a-form-model-item label='{{ i18n "pages.nodes.remark" }}'>
+                        <a-form-model-item label='{{ i18n "pages.nodes.remark" }}' help='{{ i18n "pages.nodes.remarkDesc" }}'>
                             <a-input v-model="nodeModal.node.remark"></a-input>
                         </a-form-model-item>
                         <a-form-model-item label='{{ i18n "pages.nodes.address" }}' help='{{ i18n "pages.nodes.addressDesc" }}'>
@@ -220,12 +159,6 @@
     </a-layout>
 </a-layout>
 {{template "js" .}}
-<script src="{{ .base_path }}assets/base64/base64.min.js"></script>
-<script src="{{ .base_path }}assets/qrcode/qrious.min.js"></script>
-<script src="{{ .base_path }}assets/clipboard/clipboard.min.js?{{ .cur_ver }}"></script>
-<script src="{{ .base_path }}assets/uri/URI.min.js?{{ .cur_ver }}"></script>
-<script src="{{ .base_path }}assets/js/model/inbound.js?{{ .cur_ver }}"></script>
-<script src="{{ .base_path }}assets/js/model/dbinbound.js?{{ .cur_ver }}"></script>
 <script src="{{ .base_path }}assets/js/model/node.js?{{ .cur_ver }}"></script>
 {{template "component/themeSwitcher" .}}
 <script>
@@ -239,11 +172,6 @@
             ProxyModes,
             NodeStatus,
             RandomUtil,
-            defaultCert: '',
-            defaultKey: '',
-            subSettings: { enable: false },
-            tgBotEnable: false,
-            trafficDiff: 0,
             nodes: [],
             outboundTags: [],
             testingNodeId: null,
@@ -254,10 +182,8 @@
                 isEdit: false,
                 node: new XNode(),
             },
-            sharedConfig: { inbound: null, client: null },
-            sharedClientForm: new SharedClient(),
-            inboundResults: [],
-            clientResults: [],
+            masterConfig: { masterInboundId: 0, master: null, inbounds: [] },
+            selectedMasterId: 0,
             trafficSyncInterval: 60,
             nodeColumns: [
                 { title: '{{ i18n "pages.nodes.remark" }}', dataIndex: 'remark', key: 'remark' },
@@ -281,6 +207,18 @@
                 const msg = await HttpUtil.get('/xui/API/nodes/outboundTags');
                 if (!msg.success) return;
                 this.outboundTags = msg.obj || [];
+            },
+            async getMasterConfig() {
+                const msg = await HttpUtil.get('/xui/API/nodes/master');
+                if (!msg.success) return;
+                this.masterConfig = msg.obj || { masterInboundId: 0, master: null, inbounds: [] };
+                this.selectedMasterId = this.masterConfig.masterInboundId || 0;
+            },
+            async saveMaster() {
+                const msg = await HttpUtil.post('/xui/API/nodes/master', { inboundId: this.selectedMasterId });
+                if (msg.success) {
+                    await this.getMasterConfig();
+                }
             },
             openAddNode() {
                 this.nodeModal.isEdit = false;
@@ -319,7 +257,6 @@
                         const msg = await HttpUtil.post('/xui/API/nodes/del/' + node.id);
                         if (msg.success) {
                             await self.getNodes();
-                            await self.getSharedConfig();
                         }
                     },
                 });
@@ -366,82 +303,6 @@
                 if (!ms) return '-';
                 return moment(ms).format('MM-DD HH:mm:ss');
             },
-            async getSharedConfig() {
-                const msg = await HttpUtil.get('/xui/API/nodes/sharedInbound');
-                if (!msg.success) return;
-                this.sharedConfig = msg.obj || { inbound: null, client: null };
-                if (this.sharedConfig.client) {
-                    this.sharedClientForm = new SharedClient(this.sharedConfig.client);
-                }
-            },
-            openInboundTemplate() {
-                let inbound;
-                if (this.sharedConfig.inbound) {
-                    const db = new DBInbound({
-                        protocol: this.sharedConfig.inbound.protocol,
-                        port: this.sharedConfig.inbound.port,
-                        settings: this.sharedConfig.inbound.settings,
-                        streamSettings: this.sharedConfig.inbound.streamSettings,
-                        sniffing: this.sharedConfig.inbound.sniffing,
-                        remark: this.sharedConfig.inbound.remark,
-                    });
-                    inbound = db.toInbound();
-                } else {
-                    inbound = new Inbound();
-                }
-                const dbInbound = new DBInbound();
-                dbInbound.remark = this.sharedConfig.inbound ? this.sharedConfig.inbound.remark : 'node-inbound';
-                inModal.show({
-                    title: '{{ i18n "pages.nodes.universalInbound" }}',
-                    okText: '{{ i18n "pages.nodes.save" }}',
-                    inbound: inbound,
-                    dbInbound: dbInbound,
-                    confirm: (inbound, dbInbound) => this.saveInboundTemplate(inbound, dbInbound),
-                });
-            },
-            async saveInboundTemplate(inbound, dbInbound) {
-                const data = {
-                    remark: dbInbound.remark || inbound.remark || 'node-inbound',
-                    protocol: inbound.protocol,
-                    port: inbound.port,
-                    settings: inbound.settings.toString(),
-                    sniffing: inbound.sniffing.toString(),
-                };
-                if (inbound.canEnableStream()) {
-                    data.streamSettings = inbound.stream.toString();
-                } else if (inbound.stream && inbound.stream.sockopt) {
-                    data.streamSettings = JSON.stringify({ sockopt: inbound.stream.sockopt.toJson() }, null, 2);
-                } else {
-                    data.streamSettings = '';
-                }
-                inModal.loading(true);
-                const msg = await HttpUtil.post('/xui/API/nodes/sharedInbound/save', data);
-                inModal.loading(false);
-                if (msg.success) {
-                    inModal.close();
-                    this.inboundResults = msg.obj || [];
-                    await this.getSharedConfig();
-                    await this.getNodes();
-                }
-            },
-            async createSharedClient() {
-                this.spinning = true;
-                const msg = await HttpUtil.post('/xui/API/nodes/sharedClient/create', this.sharedClientForm.toClient());
-                this.spinning = false;
-                if (msg.success) {
-                    this.clientResults = msg.obj || [];
-                    await this.getSharedConfig();
-                }
-            },
-            async updateSharedClient() {
-                this.spinning = true;
-                const msg = await HttpUtil.post('/xui/API/nodes/sharedClient/update', this.sharedClientForm.toClient());
-                this.spinning = false;
-                if (msg.success) {
-                    this.clientResults = msg.obj || [];
-                    await this.getSharedConfig();
-                }
-            },
             async getTrafficSyncInterval() {
                 const msg = await HttpUtil.get('/xui/API/nodes/trafficSyncInterval');
                 if (!msg.success) return;
@@ -456,13 +317,12 @@
             await Promise.all([
                 this.getNodes(),
                 this.getOutboundTags(),
-                this.getSharedConfig(),
+                this.getMasterConfig(),
                 this.getTrafficSyncInterval(),
             ]);
             this.spinning = false;
         },
     });
 </script>
-{{template "inboundModal"}}
 </body>
 </html>

@@ -110,11 +110,9 @@ func (a *APIController) nodeApi(api *gin.RouterGroup) {
 		{"POST", "/del/:id", a.nodeController.delNode},
 		{"POST", "/test/:id", a.nodeController.testNode},
 		{"GET", "/outboundTags", a.nodeController.getOutboundTags},
-		{"GET", "/sharedInbound", a.nodeController.getSharedConfig},
-		{"POST", "/sharedInbound/save", a.nodeController.saveTemplate},
+		{"GET", "/master", a.nodeController.getMasterConfig},
+		{"POST", "/master", a.nodeController.setMaster},
 		{"POST", "/createInbound/:id", a.nodeController.createNodeInbound},
-		{"POST", "/sharedClient/create", a.nodeController.createSharedClient},
-		{"POST", "/sharedClient/update", a.nodeController.updateSharedClient},
 		{"GET", "/trafficSyncInterval", a.nodeController.getTrafficSyncInterval},
 		{"POST", "/trafficSyncInterval", a.nodeController.setTrafficSyncInterval},
 	}

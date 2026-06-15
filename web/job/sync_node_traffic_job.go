@@ -19,13 +19,13 @@ var (
 )
 
 // SyncNodeTrafficJob periodically pulls each node's traffic counters for the
-// shared client(s), diffs them against the last-seen snapshot, and applies the
-// delta to the local client's traffic - so a client's subscription shows the
-// sum of its usage across all nodes plus the main panel.
+// master inbound's clients (under their per-node suffixed emails), writes the
+// absolute value onto the local mirror client, and adds the delta to the master
+// client - so a client's subscription shows the sum of its usage across all
+// nodes plus the main panel.
 //
 // It is registered on a short fixed cron tick, but only actually runs every
-// nodeTrafficSyncIntervalSec (configurable at runtime without re-registering
-// the cron job).
+// nodeTrafficSyncIntervalSec (configurable at runtime).
 type SyncNodeTrafficJob struct {
 	nodeService service.NodeService
 }
@@ -57,19 +57,12 @@ func (j *SyncNodeTrafficJob) Run() {
 		return
 	}
 
-	clients, err := j.nodeService.GetAllSharedClients()
+	clients, err := j.nodeService.GetMasterClients()
 	if err != nil {
 		logger.Warning("SyncNodeTrafficJob: ", err)
 		return
 	}
-
-	for _, client := range clients {
-		j.syncClient(client)
-	}
-}
-
-func (j *SyncNodeTrafficJob) syncClient(client model.NodeSharedClient) {
-	if client.Email == "" {
+	if len(clients) == 0 {
 		return
 	}
 
@@ -82,6 +75,15 @@ func (j *SyncNodeTrafficJob) syncClient(client model.NodeSharedClient) {
 		return
 	}
 
+	for _, client := range clients {
+		if client.Email == "" {
+			continue
+		}
+		j.syncClient(client.Email, targets)
+	}
+}
+
+func (j *SyncNodeTrafficJob) syncClient(baseEmail string, targets []model.Node) {
 	var sumUp, sumDown int64
 	sem := make(chan struct{}, maxNodeSyncConcurrency)
 	var wg sync.WaitGroup
@@ -101,7 +103,7 @@ func (j *SyncNodeTrafficJob) syncClient(client model.NodeSharedClient) {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
-			deltaUp, deltaDown, err := j.syncNode(ctx, node, client.Email)
+			deltaUp, deltaDown, err := j.syncNode(ctx, node, baseEmail)
 			if err != nil {
 				service.LogNodeError(node.Id, node.Remark, err)
 				return
@@ -116,17 +118,20 @@ func (j *SyncNodeTrafficJob) syncClient(client model.NodeSharedClient) {
 	wg.Wait()
 
 	if sumUp != 0 || sumDown != 0 {
-		if err := j.nodeService.ApplyTrafficDelta(client.Email, sumUp, sumDown); err != nil {
+		if err := j.nodeService.ApplyTrafficDelta(baseEmail, sumUp, sumDown); err != nil {
 			logger.Warning("SyncNodeTrafficJob: failed to apply traffic delta: ", err)
 		}
 	}
 }
 
-// syncNode fetches the remote traffic counters for email on node, diffs them
-// against the stored snapshot, updates the snapshot, and returns the
-// non-negative delta to apply. A remote-side reset (counters lower than the
+// syncNode fetches the remote traffic counters for the node-suffixed email,
+// writes the absolute value onto the local mirror client, diffs against the
+// stored snapshot, updates the snapshot, and returns the non-negative delta to
+// apply to the master client. A remote-side reset (counters lower than the
 // snapshot) clamps the delta to 0 and rebaselines instead of subtracting.
-func (j *SyncNodeTrafficJob) syncNode(ctx context.Context, node model.Node, email string) (int64, int64, error) {
+func (j *SyncNodeTrafficJob) syncNode(ctx context.Context, node model.Node, baseEmail string) (int64, int64, error) {
+	email := j.nodeService.NodeClientEmail(baseEmail, node)
+
 	c, err := service.NewNodeClient(&node)
 	if err != nil {
 		return 0, 0, err
@@ -137,14 +142,17 @@ func (j *SyncNodeTrafficJob) syncNode(ctx context.Context, node model.Node, emai
 		return 0, 0, err
 	}
 
+	// keep the local mirror client's counters identical to the node's
+	if err := j.nodeService.SetClientTrafficAbsolute(email, traffic.Up, traffic.Down); err != nil {
+		logger.Warning("SyncNodeTrafficJob: mirror traffic update: ", err)
+	}
+
 	snapshot, err := j.nodeService.GetTrafficSnapshot(node.Id, email)
 	if err != nil {
 		return 0, 0, err
 	}
 
 	if snapshot == nil {
-		// First observation: establish a baseline without counting any
-		// pre-existing historical usage on the remote node.
 		if err := j.nodeService.SaveTrafficSnapshot(node.Id, email, traffic.Up, traffic.Down); err != nil {
 			return 0, 0, err
 		}

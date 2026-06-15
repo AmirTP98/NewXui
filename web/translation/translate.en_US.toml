@@ -444,6 +444,11 @@
 
 [pages.nodes]
 "title" = "Multi Nodes"
+"masterInbound" = "Master Inbound"
+"masterInboundDesc" = "Pick the local inbound to manage from the Inbounds page. Its config is the template for every node, and any client you add/edit/delete/reset on it is mirrored to all nodes (email suffixed per node)."
+"currentMaster" = "Master"
+"noMaster" = "No master inbound selected yet. Create an inbound on the Inbounds page, then select it here."
+"remarkDesc" = "Used as the per-node email suffix (e.g. amir-usa). Keep it unique per node."
 "nodeList" = "Nodes"
 "addNode" = "Add Node"
 "editNode" = "Edit Node"

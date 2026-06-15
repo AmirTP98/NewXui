@@ -298,6 +298,20 @@ func (c *NodeClient) UpdateClient(ctx context.Context, clientId string, inboundI
 	return err
 }
 
+// DelClient removes a client (by clientId = uuid/password/email) from an inbound on the remote node.
+func (c *NodeClient) DelClient(ctx context.Context, inboundId int, clientId string) error {
+	path := fmt.Sprintf("/xui/API/inbounds/%d/delClient/%s", inboundId, url.PathEscape(clientId))
+	_, err := c.do(ctx, http.MethodPost, path, nil)
+	return err
+}
+
+// ResetClientTraffic zeroes the traffic counters for a client (by email) on an inbound on the remote node.
+func (c *NodeClient) ResetClientTraffic(ctx context.Context, inboundId int, email string) error {
+	path := fmt.Sprintf("/xui/API/inbounds/%d/resetClientTraffic/%s", inboundId, url.PathEscape(email))
+	_, err := c.do(ctx, http.MethodPost, path, nil)
+	return err
+}
+
 // GetClientTraffic returns the traffic counters for the client with the given email.
 func (c *NodeClient) GetClientTraffic(ctx context.Context, email string) (*xray.ClientTraffic, error) {
 	msg, err := c.do(ctx, http.MethodGet, "/xui/API/inbounds/getClientTraffics/"+url.PathEscape(email), nil)

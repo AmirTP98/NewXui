@@ -98,19 +98,19 @@ func (a *NodeController) getOutboundTags(c *gin.Context) {
 	jsonObj(c, tags, err)
 }
 
-func (a *NodeController) getSharedConfig(c *gin.Context) {
-	config, err := a.nodeService.GetSharedConfig()
+func (a *NodeController) getMasterConfig(c *gin.Context) {
+	config, err := a.nodeService.GetMasterConfig()
 	jsonObj(c, config, err)
 }
 
-func (a *NodeController) saveTemplate(c *gin.Context) {
-	template := &model.NodeSharedInbound{}
-	if err := c.ShouldBind(template); err != nil {
-		jsonMsg(c, "save inbound template", err)
+func (a *NodeController) setMaster(c *gin.Context) {
+	id, err := strconv.Atoi(c.PostForm("inboundId"))
+	if err != nil {
+		jsonMsg(c, "set master inbound", err)
 		return
 	}
-	results, err := a.nodeService.SaveTemplate(template)
-	jsonObj(c, results, err)
+	err = a.nodeService.SetMasterInboundId(id)
+	jsonMsg(c, "set master inbound", err)
 }
 
 func (a *NodeController) createNodeInbound(c *gin.Context) {
@@ -119,30 +119,10 @@ func (a *NodeController) createNodeInbound(c *gin.Context) {
 		jsonMsg(c, "create node inbound", err)
 		return
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
 	err = a.nodeService.CreateNodeInbound(ctx, id)
 	jsonMsg(c, "create node inbound", err)
-}
-
-func (a *NodeController) createSharedClient(c *gin.Context) {
-	client := model.Client{}
-	if err := c.ShouldBind(&client); err != nil {
-		jsonMsg(c, "create shared client", err)
-		return
-	}
-	results, err := a.nodeService.CreateSharedClient(client)
-	jsonObj(c, results, err)
-}
-
-func (a *NodeController) updateSharedClient(c *gin.Context) {
-	client := model.Client{}
-	if err := c.ShouldBind(&client); err != nil {
-		jsonMsg(c, "update shared client", err)
-		return
-	}
-	results, err := a.nodeService.UpdateSharedClient(client)
-	jsonObj(c, results, err)
 }
 
 func (a *NodeController) getTrafficSyncInterval(c *gin.Context) {

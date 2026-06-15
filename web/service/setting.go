@@ -65,6 +65,7 @@ var defaultValueMap = map[string]string{
 	"warp":               "",
 
 	"nodeTrafficSyncIntervalSec": "60",
+	"nodeMasterInboundId":        "0",
 }
 
 type SettingService struct{}

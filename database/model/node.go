@@ -32,6 +32,9 @@ type Node struct {
 	// RemoteInboundId is the id of the default inbound created on this node
 	// (0 = not created yet). Client add/edit operations target this inbound.
 	RemoteInboundId int `json:"remoteInboundId" form:"remoteInboundId"`
+	// LocalInboundId is the id of this node's mirror inbound on the main panel
+	// (same port, remark = node remark). It holds per-node client copies/traffic.
+	LocalInboundId int `json:"localInboundId" form:"localInboundId"`
 	// InboundError holds the last error from creating this node's default inbound.
 	InboundError string `json:"inboundError" form:"inboundError"`
 	// LastSync is the last successful traffic-sync time for this node (unix ms).

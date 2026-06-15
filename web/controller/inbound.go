@@ -15,6 +15,7 @@ import (
 type InboundController struct {
 	inboundService service.InboundService
 	xrayService    service.XrayService
+	nodeService    service.NodeService
 }
 
 func NewInboundController(g *gin.RouterGroup) *InboundController {
@@ -165,6 +166,12 @@ func (a *InboundController) addInboundClient(c *gin.Context) {
 		jsonMsg(c, "Something went wrong!", err)
 		return
 	}
+	// Multi Nodes: fan out to nodes when the client(s) were added to the master inbound.
+	if a.nodeService.IsMasterInbound(data.Id) {
+		if clients, cerr := a.inboundService.GetClients(data); cerr == nil {
+			go a.nodeService.FanOutAddClients(clients)
+		}
+	}
 	jsonMsg(c, "Client(s) added", nil)
 	if needRestart {
 		a.xrayService.SetToNeedRestart()
@@ -181,10 +188,20 @@ func (a *InboundController) delInboundClient(c *gin.Context) {
 	}
 	clientId := c.Param("clientId")
 
+	// Multi Nodes: capture the master client's email before deletion for fan-out.
+	var masterDelEmail string
+	isMaster := a.nodeService.IsMasterInbound(id)
+	if isMaster {
+		masterDelEmail = a.nodeService.MasterClientEmail(clientId)
+	}
+
 	needRestart, err := a.inboundService.DelInboundClient(id, clientId)
 	if err != nil {
 		jsonMsg(c, "Something went wrong!", err)
 		return
+	}
+	if isMaster {
+		go a.nodeService.FanOutDelClient(clientId, masterDelEmail)
 	}
 	jsonMsg(c, "Client deleted", nil)
 	if needRestart {
@@ -209,6 +226,12 @@ func (a *InboundController) updateInboundClient(c *gin.Context) {
 		jsonMsg(c, "Something went wrong!", err)
 		return
 	}
+	// Multi Nodes: propagate the edit to nodes when it targets the master inbound.
+	if a.nodeService.IsMasterInbound(inbound.Id) {
+		if clients, cerr := a.inboundService.GetClients(inbound); cerr == nil && len(clients) > 0 {
+			go a.nodeService.FanOutUpdateClient(clientId, clients[0])
+		}
+	}
 	jsonMsg(c, "Client updated", nil)
 	if needRestart {
 		a.xrayService.SetToNeedRestart()
@@ -229,6 +252,10 @@ func (a *InboundController) resetClientTraffic(c *gin.Context) {
 	if err != nil {
 		jsonMsg(c, "Something went wrong!", err)
 		return
+	}
+	// Multi Nodes: reset the per-node copies when resetting a master client.
+	if a.nodeService.IsMasterInbound(id) {
+		go a.nodeService.FanOutResetTraffic(email)
 	}
 	jsonMsg(c, "traffic has been reset", nil)
 	if needRestart {
