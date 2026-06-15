@@ -65,6 +65,7 @@ var defaultValueMap = map[string]string{
 	"warp":               "",
 
 	"locationMasterInboundId":    "0",
+	"locationMasterInboundIds":   "",
 	"locationSyncIntervalSec":    "30",
 }
 

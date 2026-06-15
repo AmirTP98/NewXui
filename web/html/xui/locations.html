@@ -22,10 +22,10 @@
 
                     <a-card class="loc-card" hoverable title='{{ i18n "pages.locations.master" }}'>
                         <p>{{ i18n "pages.locations.masterDesc" }}</p>
-                        <a-select show-search option-filter-prop="children" style="min-width: 260px; margin-right: 10px"
+                        <a-select mode="multiple" show-search option-filter-prop="children" style="min-width: 260px; margin-right: 10px"
                                   :dropdown-class-name="themeSwitcher.currentTheme"
                                   :placeholder="'{{ i18n "pages.locations.selectMaster" }}'"
-                                  v-model="masterInboundId">
+                                  v-model="masterInboundIds">
                             <a-select-option v-for="ib in inbounds" :key="ib.id" :value="ib.id">
                                 [[ ib.remark || ('#' + ib.id) ]] (:[[ ib.port ]])
                             </a-select-option>
@@ -125,7 +125,7 @@
             countries: COUNTRIES,
             locations: [],
             inbounds: [],
-            masterInboundId: 0,
+            masterInboundIds: [],
             syncInterval: 30,
             metaModal: { visible: false, country: undefined, remark: '' },
             columns: [
@@ -147,14 +147,14 @@
             },
             async getMaster() {
                 const msg = await HttpUtil.get('/xui/API/locations/master');
-                if (msg.success) this.masterInboundId = msg.obj || 0;
+                if (msg.success) this.masterInboundIds = msg.obj || [];
             },
             async getSyncInterval() {
                 const msg = await HttpUtil.get('/xui/API/locations/syncInterval');
                 if (msg.success) this.syncInterval = msg.obj;
             },
             async saveMaster() {
-                await HttpUtil.post('/xui/API/locations/master', { inboundId: this.masterInboundId });
+                await HttpUtil.post('/xui/API/locations/master', { inboundIds: this.masterInboundIds });
             },
             async saveSyncInterval() {
                 await HttpUtil.post('/xui/API/locations/syncInterval', { interval: this.syncInterval });

@@ -19,40 +19,78 @@ type LocationService struct {
 	settingService SettingService
 }
 
-// ----- master inbound designation -----
+// ----- master inbound designation (multiple masters supported) -----
 
-func (s *LocationService) GetMasterInboundId() int {
-	str, err := s.settingService.getString("locationMasterInboundId")
-	if err != nil {
-		return 0
-	}
-	id, _ := strconv.Atoi(str)
-	return id
-}
-
-func (s *LocationService) SetMasterInboundId(id int) error {
-	return s.settingService.saveSetting("locationMasterInboundId", strconv.Itoa(id))
-}
-
-// IsMasterInbound reports whether the given inbound id is the configured master.
-func (s *LocationService) IsMasterInbound(inboundId int) bool {
-	mid := s.GetMasterInboundId()
-	return mid != 0 && mid == inboundId
-}
-
-func (s *LocationService) getMasterInbound() (*model.Inbound, error) {
-	id := s.GetMasterInboundId()
-	if id == 0 {
-		return nil, nil
-	}
-	inbound, err := (&InboundService{}).GetInbound(id)
-	if err != nil {
-		if database.IsNotFound(err) {
-			return nil, nil
+func parseIntList(str string) []int {
+	out := make([]int, 0)
+	for _, part := range strings.Split(str, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
 		}
-		return nil, err
+		if n, err := strconv.Atoi(part); err == nil && n != 0 {
+			out = append(out, n)
+		}
 	}
-	return inbound, nil
+	return out
+}
+
+// GetMasterInboundIds returns the set of inbound ids designated as masters.
+// Falls back to the legacy single-master setting if the list is unset.
+func (s *LocationService) GetMasterInboundIds() []int {
+	str, _ := s.settingService.getString("locationMasterInboundIds")
+	ids := parseIntList(str)
+	if len(ids) == 0 {
+		if old, err := s.settingService.getString("locationMasterInboundId"); err == nil {
+			if n, _ := strconv.Atoi(old); n != 0 {
+				ids = []int{n}
+			}
+		}
+	}
+	return ids
+}
+
+func (s *LocationService) SetMasterInboundIds(ids []int) error {
+	seen := map[int]bool{}
+	parts := make([]string, 0, len(ids))
+	for _, id := range ids {
+		if id != 0 && !seen[id] {
+			seen[id] = true
+			parts = append(parts, strconv.Itoa(id))
+		}
+	}
+	// Clear the legacy single-master key so it can't resurface as a fallback
+	// once the multi-master list is authoritative (e.g. after deselecting all).
+	_ = s.settingService.saveSetting("locationMasterInboundId", "0")
+	return s.settingService.saveSetting("locationMasterInboundIds", strings.Join(parts, ","))
+}
+
+// IsMasterInbound reports whether the given inbound id is one of the masters.
+func (s *LocationService) IsMasterInbound(inboundId int) bool {
+	for _, id := range s.GetMasterInboundIds() {
+		if id == inboundId {
+			return true
+		}
+	}
+	return false
+}
+
+// getMasterInbounds resolves all designated master inbounds (missing ones skipped).
+func (s *LocationService) getMasterInbounds() ([]*model.Inbound, error) {
+	ids := s.GetMasterInboundIds()
+	inboundSvc := &InboundService{}
+	out := make([]*model.Inbound, 0, len(ids))
+	for _, id := range ids {
+		inbound, err := inboundSvc.GetInbound(id)
+		if err != nil {
+			if database.IsNotFound(err) {
+				continue
+			}
+			return nil, err
+		}
+		out = append(out, inbound)
+	}
+	return out, nil
 }
 
 func (s *LocationService) GetSyncInterval() int {
@@ -159,10 +197,12 @@ func (s *LocationService) AddLocation(loc *model.Location, inbound *model.Inboun
 		return nil, err
 	}
 
-	// replicate existing master clients onto the new location inbound
-	if master, err := s.getMasterInbound(); err == nil && master != nil {
-		if clients, err := inboundSvc.GetClients(master); err == nil && len(clients) > 0 {
-			s.applyClientsToLocation(*loc, clients, false)
+	// replicate existing clients from every master inbound onto the new location
+	if masters, err := s.getMasterInbounds(); err == nil {
+		for _, master := range masters {
+			if clients, err := inboundSvc.GetClients(master); err == nil && len(clients) > 0 {
+				s.applyClientsToLocation(*loc, clients, false)
+			}
 		}
 	}
 	return loc, nil
@@ -350,20 +390,26 @@ func (s *LocationService) ApplyTrafficDelta(email string, deltaUp, deltaDown int
 		}).Error
 }
 
-// MasterClientEmails returns the emails of all clients on the master inbound.
+// MasterClientEmails returns the unique emails of all clients across every
+// master inbound.
 func (s *LocationService) MasterClientEmails() ([]string, error) {
-	master, err := s.getMasterInbound()
-	if err != nil || master == nil {
-		return nil, err
-	}
-	clients, err := (&InboundService{}).GetClients(master)
+	masters, err := s.getMasterInbounds()
 	if err != nil {
 		return nil, err
 	}
-	emails := make([]string, 0, len(clients))
-	for _, c := range clients {
-		if c.Email != "" {
-			emails = append(emails, c.Email)
+	inboundSvc := &InboundService{}
+	seen := map[string]bool{}
+	emails := make([]string, 0)
+	for _, master := range masters {
+		clients, err := inboundSvc.GetClients(master)
+		if err != nil {
+			continue
+		}
+		for _, c := range clients {
+			if c.Email != "" && !seen[c.Email] {
+				seen[c.Email] = true
+				emails = append(emails, c.Email)
+			}
 		}
 	}
 	return emails, nil

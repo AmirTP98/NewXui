@@ -94,17 +94,24 @@ func (a *LocationController) delLocation(c *gin.Context) {
 }
 
 func (a *LocationController) getMaster(c *gin.Context) {
-	jsonObj(c, a.locationService.GetMasterInboundId(), nil)
+	jsonObj(c, a.locationService.GetMasterInboundIds(), nil)
 }
 
 func (a *LocationController) setMaster(c *gin.Context) {
-	id, err := strconv.Atoi(c.PostForm("inboundId"))
-	if err != nil {
-		jsonMsg(c, "set master inbound", err)
-		return
+	// Accept either repeated form values (inboundIds=1&inboundIds=2) or a single
+	// comma-separated value, so both the UI and a plain API/bot call work.
+	raw := c.PostFormArray("inboundIds")
+	if len(raw) == 1 {
+		raw = strings.Split(raw[0], ",")
 	}
-	err = a.locationService.SetMasterInboundId(id)
-	jsonMsg(c, "set master inbound", err)
+	ids := make([]int, 0, len(raw))
+	for _, r := range raw {
+		if n, err := strconv.Atoi(strings.TrimSpace(r)); err == nil && n != 0 {
+			ids = append(ids, n)
+		}
+	}
+	err := a.locationService.SetMasterInboundIds(ids)
+	jsonMsg(c, "set master inbounds", err)
 }
 
 func (a *LocationController) getSyncInterval(c *gin.Context) {
