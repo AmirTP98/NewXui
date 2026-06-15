@@ -26,6 +26,17 @@ type Node struct {
 
 	Enable bool `json:"enable" form:"enable"`
 
+	// Port is the listen port of this node's own default inbound, built from the
+	// shared universal template when the node is added (and its connection is OK).
+	Port int `json:"port" form:"port"`
+	// RemoteInboundId is the id of the default inbound created on this node
+	// (0 = not created yet). Client add/edit operations target this inbound.
+	RemoteInboundId int `json:"remoteInboundId" form:"remoteInboundId"`
+	// InboundError holds the last error from creating this node's default inbound.
+	InboundError string `json:"inboundError" form:"inboundError"`
+	// LastSync is the last successful traffic-sync time for this node (unix ms).
+	LastSync int64 `json:"lastSync" form:"lastSync"`
+
 	Status    string `json:"status" form:"status"`
 	LastCheck int64  `json:"lastCheck" form:"lastCheck"`
 	LastError string `json:"lastError" form:"lastError"`

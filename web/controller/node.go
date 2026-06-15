@@ -103,15 +103,26 @@ func (a *NodeController) getSharedConfig(c *gin.Context) {
 	jsonObj(c, config, err)
 }
 
-func (a *NodeController) createSharedInbound(c *gin.Context) {
+func (a *NodeController) saveTemplate(c *gin.Context) {
 	template := &model.NodeSharedInbound{}
 	if err := c.ShouldBind(template); err != nil {
-		jsonMsg(c, "create shared inbound", err)
+		jsonMsg(c, "save inbound template", err)
 		return
 	}
-	template.Id = 0
-	results, err := a.nodeService.CreateSharedInbound(template)
+	results, err := a.nodeService.SaveTemplate(template)
 	jsonObj(c, results, err)
+}
+
+func (a *NodeController) createNodeInbound(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		jsonMsg(c, "create node inbound", err)
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
+	defer cancel()
+	err = a.nodeService.CreateNodeInbound(ctx, id)
+	jsonMsg(c, "create node inbound", err)
 }
 
 func (a *NodeController) createSharedClient(c *gin.Context) {

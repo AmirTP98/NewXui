@@ -22,6 +22,10 @@ class XNode {
         this.proxyUrl = '';
         this.outboundTag = '';
         this.enable = true;
+        this.port = RandomUtil.randomIntRange(10000, 60000);
+        this.remoteInboundId = 0;
+        this.inboundError = '';
+        this.lastSync = 0;
         this.status = NodeStatus.UNKNOWN;
         this.lastCheck = 0;
         this.lastError = '';

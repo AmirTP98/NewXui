@@ -73,13 +73,7 @@ func (j *SyncNodeTrafficJob) syncClient(client model.NodeSharedClient) {
 		return
 	}
 
-	maps, err := j.nodeService.GetSharedInboundMaps(client.SharedInboundId)
-	if err != nil {
-		logger.Warning("SyncNodeTrafficJob: ", err)
-		return
-	}
-
-	targets, _, err := j.nodeService.ResolveSharedTargets(maps)
+	targets, err := j.nodeService.GetClientTargetNodes()
 	if err != nil {
 		logger.Warning("SyncNodeTrafficJob: ", err)
 		return
@@ -113,6 +107,7 @@ func (j *SyncNodeTrafficJob) syncClient(client model.NodeSharedClient) {
 				return
 			}
 			service.LogNodeOK(node.Id)
+			j.nodeService.TouchNodeSync(node.Id)
 			atomic.AddInt64(&sumUp, deltaUp)
 			atomic.AddInt64(&sumDown, deltaDown)
 		}(n)
