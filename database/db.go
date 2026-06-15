@@ -51,6 +51,10 @@ func initClientTraffic() error {
 	return db.AutoMigrate(&xray.ClientTraffic{})
 }
 
+func initLocation() error {
+	return db.AutoMigrate(&model.Location{}, &model.LocationTrafficSnapshot{})
+}
+
 func InitDB(dbPath string) error {
 	dir := path.Dir(dbPath)
 	err := os.MkdirAll(dir, fs.ModeDir)
@@ -88,6 +92,11 @@ func InitDB(dbPath string) error {
 	}
 
 	err = initClientTraffic()
+	if err != nil {
+		return err
+	}
+
+	err = initLocation()
 	if err != nil {
 		return err
 	}

@@ -515,6 +515,10 @@ func (s *InboundService) AddInboundClient(data *model.Inbound) (bool, error) {
 		s.xrayApi.Close()
 	}
 
+	if ls := (LocationService{}); ls.IsMasterInbound(data.Id) {
+		ls.FanOutAddClients(clients)
+	}
+
 	return needRestart, tx.Save(oldInbound).Error
 }
 
@@ -601,6 +605,11 @@ func (s *InboundService) DelInboundClient(inboundId int, clientId string) (bool,
 			}
 		}
 	}
+
+	if ls := (LocationService{}); ls.IsMasterInbound(inboundId) {
+		ls.FanOutDelClient(clientId, email)
+	}
+
 	return needRestart, db.Save(oldInbound).Error
 }
 
@@ -750,6 +759,11 @@ func (s *InboundService) UpdateInboundClient(data *model.Inbound, clientId strin
 		logger.Debug("Client old email not found")
 		needRestart = true
 	}
+
+	if ls := (LocationService{}); ls.IsMasterInbound(data.Id) {
+		ls.FanOutUpdateClient(clientId, clients[0])
+	}
+
 	return needRestart, tx.Save(oldInbound).Error
 }
 
@@ -1270,6 +1284,10 @@ func (s *InboundService) ResetClientTraffic(id int, clientEmail string) (bool, e
 	err = db.Save(traffic).Error
 	if err != nil {
 		return false, err
+	}
+
+	if ls := (LocationService{}); ls.IsMasterInbound(id) {
+		ls.FanOutResetTraffic(clientEmail)
 	}
 
 	return needRestart, nil

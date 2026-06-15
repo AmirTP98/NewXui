@@ -63,6 +63,9 @@ var defaultValueMap = map[string]string{
 	"subJsonMux":         "",
 	"subJsonRules":       "",
 	"warp":               "",
+
+	"locationMasterInboundId":    "0",
+	"locationSyncIntervalSec":    "30",
 }
 
 type SettingService struct{}

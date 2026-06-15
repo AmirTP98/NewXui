@@ -258,6 +258,10 @@ func (s *Server) startTask() {
 	// Check whether xray is running every 30 seconds
 	s.cron.AddJob("@every 30s", job.NewCheckXrayRunningJob())
 
+	// Sync location inbounds' traffic onto their master client (rate-limited to
+	// locationSyncIntervalSec by the job itself)
+	s.cron.AddJob("@every 10s", job.NewSyncLocationTrafficJob())
+
 	// Check if xray needs to be restarted
 	s.cron.AddFunc("@every 10s", func() {
 		if s.xrayService.IsNeedRestartAndSetFalse() {

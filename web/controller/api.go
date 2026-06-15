@@ -8,9 +8,10 @@ import (
 
 type APIController struct {
 	BaseController
-	inboundController *InboundController
-	serverController  *ServerController
-	Tgbot             service.Tgbot
+	inboundController  *InboundController
+	serverController   *ServerController
+	locationController *LocationController
+	Tgbot              service.Tgbot
 }
 
 func NewAPIController(g *gin.RouterGroup, s *ServerController) *APIController {
@@ -27,6 +28,33 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 
 	a.inboundApi(api)
 	a.serverApi(api)
+	a.locationApi(api)
+}
+
+func (a *APIController) locationApi(api *gin.RouterGroup) {
+	locationsApi := api.Group("/locations")
+
+	a.locationController = &LocationController{}
+
+	routes := []struct {
+		Method  string
+		Path    string
+		Handler gin.HandlerFunc
+	}{
+		{"GET", "/", a.locationController.getLocations},
+		{"GET", "/get/:id", a.locationController.getLocation},
+		{"POST", "/add", a.locationController.addLocation},
+		{"POST", "/update/:id", a.locationController.updateLocation},
+		{"POST", "/del/:id", a.locationController.delLocation},
+		{"GET", "/master", a.locationController.getMaster},
+		{"POST", "/master", a.locationController.setMaster},
+		{"GET", "/syncInterval", a.locationController.getSyncInterval},
+		{"POST", "/syncInterval", a.locationController.setSyncInterval},
+	}
+
+	for _, route := range routes {
+		locationsApi.Handle(route.Method, route.Path, route.Handler)
+	}
 }
 
 func (a *APIController) inboundApi(api *gin.RouterGroup) {
