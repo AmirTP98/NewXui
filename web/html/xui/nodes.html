@@ -35,7 +35,7 @@
             <a-spin :spinning="spinning" :delay="500" tip='{{ i18n "loading"}}'>
                 <a-space direction="vertical" style="width:100%">
 
-                    <a-card class="node-card" hoverable :title='{{ i18n "pages.nodes.nodeList" }}'>
+                    <a-card class="node-card" hoverable title='{{ i18n "pages.nodes.nodeList" }}'>
                         <template slot="extra">
                             <a-button type="primary" icon="plus" @click="openAddNode">{{ i18n "pages.nodes.addNode" }}</a-button>
                         </template>
@@ -60,10 +60,10 @@
                                 </a-button-group>
                             </template>
                         </a-table>
-                        <a-empty v-if="nodes.length === 0" :description='{{ i18n "pages.nodes.noNodes" }}'></a-empty>
+                        <a-empty v-if="nodes.length === 0" description='{{ i18n "pages.nodes.noNodes" }}'></a-empty>
                     </a-card>
 
-                    <a-card class="node-card" hoverable :title='{{ i18n "pages.nodes.sharedInbound" }}'>
+                    <a-card class="node-card" hoverable title='{{ i18n "pages.nodes.sharedInbound" }}'>
                         <p>{{ i18n "pages.nodes.sharedInboundDesc" }}</p>
                         <a-alert v-if="sharedConfig.inbound" type="info" show-icon style="margin-bottom: 10px">
                             <template slot="message">
@@ -129,7 +129,7 @@
                         </a-list>
                     </a-card>
 
-                    <a-card class="node-card" hoverable v-if="sharedConfig.inbound" :title='{{ i18n "pages.nodes.sharedClient" }}'>
+                    <a-card class="node-card" hoverable v-if="sharedConfig.inbound" title='{{ i18n "pages.nodes.sharedClient" }}'>
                         <p>{{ i18n "pages.nodes.sharedClientDesc" }}</p>
                         <a-form-model layout="vertical">
                             <a-row :gutter="16">
@@ -181,7 +181,7 @@
                         </a-list>
                     </a-card>
 
-                    <a-card class="node-card" hoverable :title='{{ i18n "pages.nodes.trafficSync" }}'>
+                    <a-card class="node-card" hoverable title='{{ i18n "pages.nodes.trafficSync" }}'>
                         <p>{{ i18n "pages.nodes.trafficSyncDesc" }}</p>
                         <a-input-number v-model="trafficSyncInterval" :min="5" style="margin-right: 10px"></a-input-number>
                         <a-button type="primary" @click="saveTrafficSyncInterval">{{ i18n "pages.nodes.save" }}</a-button>
@@ -199,10 +199,10 @@
                         <a-form-model-item label='{{ i18n "pages.nodes.remark" }}'>
                             <a-input v-model="nodeModal.node.remark"></a-input>
                         </a-form-model-item>
-                        <a-form-model-item label='{{ i18n "pages.nodes.address" }}' :help='{{ i18n "pages.nodes.addressDesc" }}'>
+                        <a-form-model-item label='{{ i18n "pages.nodes.address" }}' help='{{ i18n "pages.nodes.addressDesc" }}'>
                             <a-input v-model="nodeModal.node.address" placeholder="https://1.2.3.4:54321"></a-input>
                         </a-form-model-item>
-                        <a-form-model-item label='{{ i18n "pages.nodes.basePath" }}' :help='{{ i18n "pages.nodes.basePathDesc" }}'>
+                        <a-form-model-item label='{{ i18n "pages.nodes.basePath" }}' help='{{ i18n "pages.nodes.basePathDesc" }}'>
                             <a-input v-model="nodeModal.node.basePath" placeholder="/xxxxxxxxx/"></a-input>
                         </a-form-model-item>
                         <a-row :gutter="16">
@@ -225,11 +225,11 @@
                             </a-radio-group>
                         </a-form-model-item>
                         <a-form-model-item v-if="nodeModal.node.proxyMode === ProxyModes.PROXY_URL"
-                                            label='{{ i18n "pages.nodes.proxyUrl" }}' :help='{{ i18n "pages.nodes.proxyUrlDesc" }}'>
+                                            label='{{ i18n "pages.nodes.proxyUrl" }}' help='{{ i18n "pages.nodes.proxyUrlDesc" }}'>
                             <a-input v-model="nodeModal.node.proxyUrl" placeholder="http://user:pass@host:port"></a-input>
                         </a-form-model-item>
                         <a-form-model-item v-if="nodeModal.node.proxyMode === ProxyModes.OUTBOUND"
-                                            label='{{ i18n "pages.nodes.outboundTag" }}' :help='{{ i18n "pages.nodes.outboundTagDesc" }}'>
+                                            label='{{ i18n "pages.nodes.outboundTag" }}' help='{{ i18n "pages.nodes.outboundTagDesc" }}'>
                             <a-select v-model="nodeModal.node.outboundTag" :dropdown-class-name="themeSwitcher.currentTheme">
                                 <a-select-option v-for="tag in outboundTags" :key="tag" :value="tag">[[ tag ]]</a-select-option>
                             </a-select>

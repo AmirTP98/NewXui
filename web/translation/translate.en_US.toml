@@ -461,7 +461,7 @@
 "proxyUrl" = "Proxy URL"
 "proxyUrlDesc" = "e.g. http://user:pass@host:port or socks5://user:pass@host:port"
 "outboundTag" = "Outbound"
-"outboundTagDesc" = "Route traffic to this node through one of this panel's configured Xray outbounds."
+"outboundTagDesc" = "Route traffic to this node through one of this panel configured Xray outbounds."
 "enable" = "Enable"
 "status" = "Status"
 "statusOnline" = "Online"
