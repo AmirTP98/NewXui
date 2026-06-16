@@ -12,7 +12,7 @@ import (
 	"github.com/alireza0/x-ui/util/common"
 	"github.com/alireza0/x-ui/xray"
 
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
