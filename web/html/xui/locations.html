@@ -44,6 +44,10 @@
                             <template slot="inbound" slot-scope="text, loc">
                                 [[ inboundLabel(loc.inboundId) ]]
                             </template>
+                            <template slot="live" slot-scope="text, loc">
+                                <span style="color:#52c41a; white-space:nowrap">↑ [[ liveText(loc.inboundId).up ]]</span>
+                                <span style="color:#1890ff; white-space:nowrap; margin-left:8px">↓ [[ liveText(loc.inboundId).down ]]</span>
+                            </template>
                             <template slot="enable" slot-scope="text, loc">
                                 <a-switch :checked="loc.enable" @change="toggleEnable(loc)"></a-switch>
                             </template>
@@ -127,11 +131,13 @@
             inbounds: [],
             masterInboundIds: [],
             syncInterval: 30,
+            liveRates: {},
             metaModal: { visible: false, country: undefined, remark: '' },
             columns: [
                 { title: '{{ i18n "pages.locations.country" }}', key: 'country', scopedSlots: { customRender: 'country' } },
                 { title: '{{ i18n "pages.locations.remark" }}', dataIndex: 'remark', key: 'remark' },
                 { title: '{{ i18n "pages.locations.inbound" }}', key: 'inbound', scopedSlots: { customRender: 'inbound' } },
+                { title: '{{ i18n "pages.locations.liveTraffic" }}', key: 'live', scopedSlots: { customRender: 'live' } },
                 { title: '{{ i18n "pages.locations.enable" }}', key: 'enable', scopedSlots: { customRender: 'enable' } },
                 { title: '{{ i18n "pages.locations.action" }}', key: 'action', scopedSlots: { customRender: 'action' } },
             ],
@@ -231,11 +237,51 @@
             async refresh() {
                 await Promise.all([this.getLocations(), this.getInbounds()]);
             },
+            // Poll each location inbound's cumulative counters and derive a live
+            // up/down rate from the change since the last observation. The DB
+            // counters refresh on the Xray traffic job (~10s), so the rate
+            // updates at that cadence without touching Xray stats directly.
+            async pollLiveTraffic() {
+                const msg = await HttpUtil.get('/xui/API/inbounds/');
+                if (!msg.success) return;
+                const now = Date.now();
+                (msg.obj || []).forEach(ib => {
+                    const up = ib.up || 0, down = ib.down || 0;
+                    const prev = this._prevTraffic[ib.id];
+                    if (prev) {
+                        if (up !== prev.up || down !== prev.down) {
+                            const dt = (now - prev.time) / 1000;
+                            if (dt > 0) {
+                                this.$set(this.liveRates, ib.id, {
+                                    up: Math.max(0, (up - prev.up) / dt),
+                                    down: Math.max(0, (down - prev.down) / dt),
+                                });
+                            }
+                            this._prevTraffic[ib.id] = { up, down, time: now };
+                        } else if (now - prev.time > 25000) {
+                            this.$set(this.liveRates, ib.id, { up: 0, down: 0 });
+                        }
+                    } else {
+                        this._prevTraffic[ib.id] = { up, down, time: now };
+                        this.$set(this.liveRates, ib.id, { up: 0, down: 0 });
+                    }
+                });
+            },
+            liveText(inboundId) {
+                const r = this.liveRates[inboundId] || { up: 0, down: 0 };
+                return { up: sizeFormat(r.up) + '/s', down: sizeFormat(r.down) + '/s' };
+            },
         },
         async mounted() {
             this.spinning = true;
+            this._prevTraffic = {};
             await Promise.all([this.getLocations(), this.getInbounds(), this.getMaster(), this.getSyncInterval()]);
             this.spinning = false;
+            this.pollLiveTraffic();
+            this._liveTimer = setInterval(() => this.pollLiveTraffic(), 5000);
+        },
+        beforeDestroy() {
+            if (this._liveTimer) clearInterval(this._liveTimer);
         },
     });
 </script>

@@ -903,6 +903,15 @@ func (s *SubService) genShadowsocksLink(inbound *model.Inbound, email string) st
 func (s *SubService) genRemark(inbound *model.Inbound, email string, extra string) string {
 	name := email
 
+	// When an external proxy supplies a remark, use it as a template. Supported
+	// variables: {clientname} / {email} -> the client's email, {inbound} -> the
+	// inbound remark. e.g. "amir-{clientname}" => "amir-<email>".
+	if extra != "" {
+		name = strings.ReplaceAll(extra, "{clientname}", email)
+		name = strings.ReplaceAll(name, "{email}", email)
+		name = strings.ReplaceAll(name, "{inbound}", inbound.Remark)
+	}
+
 	if !s.showInfo {
 		return name
 	}
