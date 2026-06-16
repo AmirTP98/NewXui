@@ -44,6 +44,10 @@
                             <template slot="inbound" slot-scope="text, loc">
                                 [[ inboundLabel(loc.inboundId) ]]
                             </template>
+                            <template slot="domain" slot-scope="text, loc">
+                                <a-input size="small" v-model="loc.domain" @blur="saveDomain(loc)"
+                                         placeholder="—" style="min-width:150px"></a-input>
+                            </template>
                             <template slot="live" slot-scope="text, loc">
                                 <span style="color:#52c41a; white-space:nowrap">↑ [[ liveText(loc.inboundId).up ]]</span>
                                 <span style="color:#1890ff; white-space:nowrap; margin-left:8px">↓ [[ liveText(loc.inboundId).down ]]</span>
@@ -82,6 +86,9 @@
                         <a-form-model-item label='{{ i18n "pages.locations.remark" }}'>
                             <a-input v-model="metaModal.remark" placeholder="germany"></a-input>
                         </a-form-model-item>
+                        <a-form-model-item label='{{ i18n "pages.locations.domain" }}' help='{{ i18n "pages.locations.domainDesc" }}'>
+                            <a-input v-model="metaModal.domain" placeholder="de.example.com"></a-input>
+                        </a-form-model-item>
                     </a-form-model>
                 </a-modal>
             </a-spin>
@@ -102,16 +109,56 @@
         return code.toUpperCase().replace(/[A-Z]/g, c => String.fromCodePoint(0x1F1E6 - 65 + c.charCodeAt(0)));
     }
     const COUNTRIES = [
-        { code: 'DE', name: 'Germany' }, { code: 'FR', name: 'France' }, { code: 'NL', name: 'Netherlands' },
-        { code: 'GB', name: 'United Kingdom' }, { code: 'US', name: 'United States' }, { code: 'CA', name: 'Canada' },
-        { code: 'FI', name: 'Finland' }, { code: 'SE', name: 'Sweden' }, { code: 'CH', name: 'Switzerland' },
-        { code: 'AT', name: 'Austria' }, { code: 'PL', name: 'Poland' }, { code: 'IT', name: 'Italy' },
-        { code: 'ES', name: 'Spain' }, { code: 'RO', name: 'Romania' }, { code: 'RU', name: 'Russia' },
-        { code: 'TR', name: 'Turkey' }, { code: 'AE', name: 'UAE' }, { code: 'IR', name: 'Iran' },
-        { code: 'IN', name: 'India' }, { code: 'SG', name: 'Singapore' }, { code: 'JP', name: 'Japan' },
-        { code: 'HK', name: 'Hong Kong' }, { code: 'AM', name: 'Armenia' }, { code: 'AZ', name: 'Azerbaijan' },
-        { code: 'KZ', name: 'Kazakhstan' }, { code: 'GE', name: 'Georgia' }, { code: 'QA', name: 'Qatar' },
-        { code: 'CN', name: 'China' }, { code: 'KR', name: 'South Korea' }, { code: 'AU', name: 'Australia' },
+        {code:'AF',name:'Afghanistan'},{code:'AL',name:'Albania'},{code:'DZ',name:'Algeria'},{code:'AD',name:'Andorra'},
+        {code:'AO',name:'Angola'},{code:'AG',name:'Antigua and Barbuda'},{code:'AR',name:'Argentina'},{code:'AM',name:'Armenia'},
+        {code:'AU',name:'Australia'},{code:'AT',name:'Austria'},{code:'AZ',name:'Azerbaijan'},{code:'BS',name:'Bahamas'},
+        {code:'BH',name:'Bahrain'},{code:'BD',name:'Bangladesh'},{code:'BB',name:'Barbados'},{code:'BY',name:'Belarus'},
+        {code:'BE',name:'Belgium'},{code:'BZ',name:'Belize'},{code:'BJ',name:'Benin'},{code:'BT',name:'Bhutan'},
+        {code:'BO',name:'Bolivia'},{code:'BA',name:'Bosnia and Herzegovina'},{code:'BW',name:'Botswana'},{code:'BR',name:'Brazil'},
+        {code:'BN',name:'Brunei'},{code:'BG',name:'Bulgaria'},{code:'BF',name:'Burkina Faso'},{code:'BI',name:'Burundi'},
+        {code:'KH',name:'Cambodia'},{code:'CM',name:'Cameroon'},{code:'CA',name:'Canada'},{code:'CV',name:'Cape Verde'},
+        {code:'CF',name:'Central African Republic'},{code:'TD',name:'Chad'},{code:'CL',name:'Chile'},{code:'CN',name:'China'},
+        {code:'CO',name:'Colombia'},{code:'KM',name:'Comoros'},{code:'CG',name:'Congo'},{code:'CD',name:'Congo (DRC)'},
+        {code:'CR',name:'Costa Rica'},{code:'CI',name:"Cote d'Ivoire"},{code:'HR',name:'Croatia'},{code:'CU',name:'Cuba'},
+        {code:'CY',name:'Cyprus'},{code:'CZ',name:'Czechia'},{code:'DK',name:'Denmark'},{code:'DJ',name:'Djibouti'},
+        {code:'DM',name:'Dominica'},{code:'DO',name:'Dominican Republic'},{code:'EC',name:'Ecuador'},{code:'EG',name:'Egypt'},
+        {code:'SV',name:'El Salvador'},{code:'GQ',name:'Equatorial Guinea'},{code:'ER',name:'Eritrea'},{code:'EE',name:'Estonia'},
+        {code:'SZ',name:'Eswatini'},{code:'ET',name:'Ethiopia'},{code:'FJ',name:'Fiji'},{code:'FI',name:'Finland'},
+        {code:'FR',name:'France'},{code:'GA',name:'Gabon'},{code:'GM',name:'Gambia'},{code:'GE',name:'Georgia'},
+        {code:'DE',name:'Germany'},{code:'GH',name:'Ghana'},{code:'GR',name:'Greece'},{code:'GD',name:'Grenada'},
+        {code:'GT',name:'Guatemala'},{code:'GN',name:'Guinea'},{code:'GW',name:'Guinea-Bissau'},{code:'GY',name:'Guyana'},
+        {code:'HT',name:'Haiti'},{code:'HN',name:'Honduras'},{code:'HK',name:'Hong Kong'},{code:'HU',name:'Hungary'},
+        {code:'IS',name:'Iceland'},{code:'IN',name:'India'},{code:'ID',name:'Indonesia'},{code:'IR',name:'Iran'},
+        {code:'IQ',name:'Iraq'},{code:'IE',name:'Ireland'},{code:'IL',name:'Israel'},{code:'IT',name:'Italy'},
+        {code:'JM',name:'Jamaica'},{code:'JP',name:'Japan'},{code:'JO',name:'Jordan'},{code:'KZ',name:'Kazakhstan'},
+        {code:'KE',name:'Kenya'},{code:'KI',name:'Kiribati'},{code:'KW',name:'Kuwait'},{code:'KG',name:'Kyrgyzstan'},
+        {code:'LA',name:'Laos'},{code:'LV',name:'Latvia'},{code:'LB',name:'Lebanon'},{code:'LS',name:'Lesotho'},
+        {code:'LR',name:'Liberia'},{code:'LY',name:'Libya'},{code:'LI',name:'Liechtenstein'},{code:'LT',name:'Lithuania'},
+        {code:'LU',name:'Luxembourg'},{code:'MO',name:'Macau'},{code:'MG',name:'Madagascar'},{code:'MW',name:'Malawi'},
+        {code:'MY',name:'Malaysia'},{code:'MV',name:'Maldives'},{code:'ML',name:'Mali'},{code:'MT',name:'Malta'},
+        {code:'MH',name:'Marshall Islands'},{code:'MR',name:'Mauritania'},{code:'MU',name:'Mauritius'},{code:'MX',name:'Mexico'},
+        {code:'FM',name:'Micronesia'},{code:'MD',name:'Moldova'},{code:'MC',name:'Monaco'},{code:'MN',name:'Mongolia'},
+        {code:'ME',name:'Montenegro'},{code:'MA',name:'Morocco'},{code:'MZ',name:'Mozambique'},{code:'MM',name:'Myanmar'},
+        {code:'NA',name:'Namibia'},{code:'NR',name:'Nauru'},{code:'NP',name:'Nepal'},{code:'NL',name:'Netherlands'},
+        {code:'NZ',name:'New Zealand'},{code:'NI',name:'Nicaragua'},{code:'NE',name:'Niger'},{code:'NG',name:'Nigeria'},
+        {code:'KP',name:'North Korea'},{code:'MK',name:'North Macedonia'},{code:'NO',name:'Norway'},{code:'OM',name:'Oman'},
+        {code:'PK',name:'Pakistan'},{code:'PW',name:'Palau'},{code:'PS',name:'Palestine'},{code:'PA',name:'Panama'},
+        {code:'PG',name:'Papua New Guinea'},{code:'PY',name:'Paraguay'},{code:'PE',name:'Peru'},{code:'PH',name:'Philippines'},
+        {code:'PL',name:'Poland'},{code:'PT',name:'Portugal'},{code:'QA',name:'Qatar'},{code:'RO',name:'Romania'},
+        {code:'RU',name:'Russia'},{code:'RW',name:'Rwanda'},{code:'KN',name:'Saint Kitts and Nevis'},{code:'LC',name:'Saint Lucia'},
+        {code:'VC',name:'Saint Vincent and the Grenadines'},{code:'WS',name:'Samoa'},{code:'SM',name:'San Marino'},
+        {code:'ST',name:'Sao Tome and Principe'},{code:'SA',name:'Saudi Arabia'},{code:'SN',name:'Senegal'},{code:'RS',name:'Serbia'},
+        {code:'SC',name:'Seychelles'},{code:'SL',name:'Sierra Leone'},{code:'SG',name:'Singapore'},{code:'SK',name:'Slovakia'},
+        {code:'SI',name:'Slovenia'},{code:'SB',name:'Solomon Islands'},{code:'SO',name:'Somalia'},{code:'ZA',name:'South Africa'},
+        {code:'KR',name:'South Korea'},{code:'SS',name:'South Sudan'},{code:'ES',name:'Spain'},{code:'LK',name:'Sri Lanka'},
+        {code:'SD',name:'Sudan'},{code:'SR',name:'Suriname'},{code:'SE',name:'Sweden'},{code:'CH',name:'Switzerland'},
+        {code:'SY',name:'Syria'},{code:'TW',name:'Taiwan'},{code:'TJ',name:'Tajikistan'},{code:'TZ',name:'Tanzania'},
+        {code:'TH',name:'Thailand'},{code:'TL',name:'Timor-Leste'},{code:'TG',name:'Togo'},{code:'TO',name:'Tonga'},
+        {code:'TT',name:'Trinidad and Tobago'},{code:'TN',name:'Tunisia'},{code:'TR',name:'Turkey'},{code:'TM',name:'Turkmenistan'},
+        {code:'TV',name:'Tuvalu'},{code:'UG',name:'Uganda'},{code:'UA',name:'Ukraine'},{code:'AE',name:'United Arab Emirates'},
+        {code:'GB',name:'United Kingdom'},{code:'US',name:'United States'},{code:'UY',name:'Uruguay'},{code:'UZ',name:'Uzbekistan'},
+        {code:'VU',name:'Vanuatu'},{code:'VA',name:'Vatican City'},{code:'VE',name:'Venezuela'},{code:'VN',name:'Vietnam'},
+        {code:'YE',name:'Yemen'},{code:'ZM',name:'Zambia'},{code:'ZW',name:'Zimbabwe'},
     ];
 
     const app = new Vue({
@@ -132,11 +179,12 @@
             masterInboundIds: [],
             syncInterval: 30,
             liveRates: {},
-            metaModal: { visible: false, country: undefined, remark: '' },
+            metaModal: { visible: false, country: undefined, remark: '', domain: '' },
             columns: [
                 { title: '{{ i18n "pages.locations.country" }}', key: 'country', scopedSlots: { customRender: 'country' } },
                 { title: '{{ i18n "pages.locations.remark" }}', dataIndex: 'remark', key: 'remark' },
                 { title: '{{ i18n "pages.locations.inbound" }}', key: 'inbound', scopedSlots: { customRender: 'inbound' } },
+                { title: '{{ i18n "pages.locations.domain" }}', key: 'domain', scopedSlots: { customRender: 'domain' } },
                 { title: '{{ i18n "pages.locations.liveTraffic" }}', key: 'live', scopedSlots: { customRender: 'live' } },
                 { title: '{{ i18n "pages.locations.enable" }}', key: 'enable', scopedSlots: { customRender: 'enable' } },
                 { title: '{{ i18n "pages.locations.action" }}', key: 'action', scopedSlots: { customRender: 'action' } },
@@ -170,7 +218,7 @@
                 return ib ? ((ib.remark || ('#' + ib.id)) + ' (:' + ib.port + ')') : ('#' + id);
             },
             openAddLocation() {
-                this.metaModal = { visible: true, country: undefined, remark: '' };
+                this.metaModal = { visible: true, country: undefined, remark: '', domain: '' };
             },
             proceedToInbound() {
                 if (!this.metaModal.country) {
@@ -180,20 +228,22 @@
                 const country = this.metaModal.country;
                 const flag = flagOf(country);
                 const remark = this.metaModal.remark || country.toLowerCase();
+                const domain = (this.metaModal.domain || '').trim();
                 this.metaModal.visible = false;
                 inModal.show({
                     title: '{{ i18n "pages.locations.addLocation" }}',
                     okText: '{{ i18n "pages.locations.save" }}',
                     inbound: new Inbound(),
                     dbInbound: new DBInbound(),
-                    confirm: (inbound, dbInbound) => this.createLocation(country, flag, remark, inbound),
+                    confirm: (inbound, dbInbound) => this.createLocation(country, flag, remark, domain, inbound),
                 });
             },
-            async createLocation(country, flag, remark, inbound) {
+            async createLocation(country, flag, remark, domain, inbound) {
                 const data = {
                     country: country,
                     flag: flag,
                     remark: remark,
+                    domain: domain,
                     listen: inbound.listen,
                     port: inbound.port,
                     protocol: inbound.protocol,
@@ -214,6 +264,9 @@
                     inModal.close();
                     await this.refresh();
                 }
+            },
+            async saveDomain(loc) {
+                await HttpUtil.post('/xui/API/locations/update/' + loc.id, loc);
             },
             async toggleEnable(loc) {
                 loc.enable = !loc.enable;
@@ -278,7 +331,7 @@
             await Promise.all([this.getLocations(), this.getInbounds(), this.getMaster(), this.getSyncInterval()]);
             this.spinning = false;
             this.pollLiveTraffic();
-            this._liveTimer = setInterval(() => this.pollLiveTraffic(), 5000);
+            this._liveTimer = setInterval(() => this.pollLiveTraffic(), 2000);
         },
         beforeDestroy() {
             if (this._liveTimer) clearInterval(this._liveTimer);

@@ -45,6 +45,7 @@ func (a *LocationController) addLocation(c *gin.Context) {
 		Country: c.PostForm("country"),
 		Flag:    c.PostForm("flag"),
 		Remark:  c.PostForm("remark"),
+		Domain:  c.PostForm("domain"),
 		Enable:  true,
 	}
 

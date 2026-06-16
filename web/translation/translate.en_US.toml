@@ -450,6 +450,8 @@
 "flag" = "Flag"
 "remark" = "Remark"
 "inbound" = "Inbound"
+"domain" = "Domain"
+"domainDesc" = "Optional. Used in this location's subscription links instead of the server IP."
 "liveTraffic" = "Live Traffic"
 "enable" = "Enable"
 "action" = "Action"

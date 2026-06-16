@@ -23,7 +23,20 @@ type SubService struct {
 	showInfo    bool
 	remarkModel string
 
-	inboundService service.InboundService
+	inboundService  service.InboundService
+	locationService service.LocationService
+	locByInbound    map[int]model.Location // inbound id -> location (for domain/flag overrides)
+}
+
+// inboundAddress returns the location's domain for a location inbound (when set),
+// otherwise the host the subscription was requested with.
+func (s *SubService) inboundAddress(inbound *model.Inbound) string {
+	if loc, ok := s.locByInbound[inbound.Id]; ok {
+		if d := strings.TrimSpace(loc.Domain); d != "" {
+			return d
+		}
+	}
+	return s.address
 }
 
 func NewSubService(showInfo bool, remarkModel string) *SubService {
@@ -35,6 +48,16 @@ func NewSubService(showInfo bool, remarkModel string) *SubService {
 
 func (s *SubService) GetSubs(subId string, host string) ([]string, string, error) {
 	s.address = host
+
+	// Build the inbound -> location map so location inbounds can use their own
+	// domain and flag in the generated links.
+	s.locByInbound = map[int]model.Location{}
+	if locs, err := s.locationService.GetAllLocations(); err == nil {
+		for _, l := range locs {
+			s.locByInbound[l.InboundId] = l
+		}
+	}
+
 	var result []string
 	var header string
 	var traffic xray.ClientTraffic
@@ -202,7 +225,7 @@ func (s *SubService) genVmessLink(inbound *model.Inbound, email string) string {
 	}
 	obj := map[string]interface{}{
 		"v":    "2",
-		"add":  s.address,
+		"add":  s.inboundAddress(inbound),
 		"port": inbound.Port,
 		"type": "none",
 	}
@@ -338,7 +361,7 @@ func (s *SubService) genVmessLink(inbound *model.Inbound, email string) string {
 }
 
 func (s *SubService) genVlessLink(inbound *model.Inbound, email string) string {
-	address := s.address
+	address := s.inboundAddress(inbound)
 	if inbound.Protocol != model.VLESS {
 		return ""
 	}
@@ -543,7 +566,7 @@ func (s *SubService) genVlessLink(inbound *model.Inbound, email string) string {
 }
 
 func (s *SubService) genTrojanLink(inbound *model.Inbound, email string) string {
-	address := s.address
+	address := s.inboundAddress(inbound)
 	if inbound.Protocol != model.Trojan {
 		return ""
 	}
@@ -735,7 +758,7 @@ func (s *SubService) genTrojanLink(inbound *model.Inbound, email string) string 
 }
 
 func (s *SubService) genShadowsocksLink(inbound *model.Inbound, email string) string {
-	address := s.address
+	address := s.inboundAddress(inbound)
 	if inbound.Protocol != model.Shadowsocks {
 		return ""
 	}
@@ -910,6 +933,16 @@ func (s *SubService) genRemark(inbound *model.Inbound, email string, extra strin
 		name = strings.ReplaceAll(extra, "{clientname}", email)
 		name = strings.ReplaceAll(name, "{email}", email)
 		name = strings.ReplaceAll(name, "{inbound}", inbound.Remark)
+	}
+
+	// For a location inbound, label the entry with the country flag + location
+	// remark, e.g. "🇹🇷turkey" (flag prefixes any external-proxy template too).
+	if loc, ok := s.locByInbound[inbound.Id]; ok {
+		base := loc.Remark
+		if extra != "" {
+			base = name
+		}
+		name = loc.Flag + base
 	}
 
 	if !s.showInfo {

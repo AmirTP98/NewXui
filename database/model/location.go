@@ -6,9 +6,10 @@ package model
 // their traffic is summed back onto the master client.
 type Location struct {
 	Id        int    `json:"id" form:"id" gorm:"primaryKey;autoIncrement"`
-	Country   string `json:"country" form:"country"`   // ISO 2-letter code, e.g. "DE"
-	Flag      string `json:"flag" form:"flag"`         // emoji flag, e.g. "🇩🇪"
-	Remark    string `json:"remark" form:"remark"`     // label + email suffix
+	Country   string `json:"country" form:"country"`     // ISO 2-letter code, e.g. "DE"
+	Flag      string `json:"flag" form:"flag"`           // emoji flag, e.g. "🇩🇪"
+	Remark    string `json:"remark" form:"remark"`       // label + email suffix
+	Domain    string `json:"domain" form:"domain"`       // optional; used in sub links instead of the server IP
 	InboundId int    `json:"inboundId" form:"inboundId"` // the local inbound for this location
 	Enable    bool   `json:"enable" form:"enable"`
 }
