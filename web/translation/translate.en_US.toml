@@ -66,6 +66,7 @@
 "settings" = "Panel Settings"
 "xray" = "Xray Configs"
 "locations" = "Locations"
+"reality" = "Reality"
 "logout" = "Log Out"
 "link" = "Manage"
 
@@ -469,6 +470,28 @@
 "syncInterval" = "Traffic Sync Interval (seconds)"
 "syncIntervalDesc" = "How often the per-location traffic is summed back onto the master client."
 "addLocationDesc" = "Pick a country and a remark, then define this location's inbound (same form as Add Inbound). Clients of the master inbound are auto-created here."
+
+[pages.reality]
+"title" = "Reality"
+"realityList" = "Reality Mirrors"
+"addReality" = "Add Reality Mirror"
+"addRealityDesc" = "Select source VLESS inbounds, set a remark, then configure the Reality inbound. Clients are mirrored automatically."
+"sourceInbounds" = "Source VLESS Inbounds"
+"sourceDesc" = "Select VLESS inbounds whose clients will be mirrored onto the Reality inbound with the same UUID."
+"selectSource" = "Select source inbound(s)"
+"remark" = "Sub Link Remark"
+"remarkDesc" = "Label shown in the client's subscription link for this Reality config."
+"inbound" = "Reality Inbound"
+"enable" = "Enable"
+"action" = "Action"
+"delete" = "Delete"
+"cancel" = "Cancel"
+"save" = "Save"
+"next" = "Next: Configure Reality Inbound"
+"noReality" = "No Reality mirrors configured yet."
+"deleteReality" = "Delete Reality Mirror"
+"deleteRealityContent" = "Are you sure? This also deletes the Reality inbound."
+"sourceSaved" = "Source inbounds saved"
 
 [tgbot]
 "noResult" = "❗ No result!"

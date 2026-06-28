@@ -148,6 +148,13 @@ func (s *LocationService) GetAllLocations() ([]model.Location, error) {
 	return locations, err
 }
 
+func (s *LocationService) GetLocationsByType(locType string) ([]model.Location, error) {
+	db := database.GetDB()
+	var locations []model.Location
+	err := db.Where("type = ?", locType).Find(&locations).Error
+	return locations, err
+}
+
 func (s *LocationService) GetLocation(id int) (*model.Location, error) {
 	db := database.GetDB()
 	loc := &model.Location{}
@@ -494,6 +501,9 @@ func (s *LocationService) MigrateLocationClientsToVirtual() {
 		db.Create(&model.Setting{Key: "locationVirtualMigrated", Value: "true"})
 		return
 	}
+
+	// Set type="location" for any existing locations without a type
+	db.Model(&model.Location{}).Where("type IS NULL OR type = ''").Update("type", "location")
 
 	suffixes := s.LocationSuffixes()
 

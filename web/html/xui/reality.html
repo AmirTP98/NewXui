@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+{{template "head" .}}
+<style>
+    @media (min-width: 769px) {
+        .ant-layout-content { margin: 24px 16px; }
+    }
+    @media (max-width: 768px) {
+        .ant-card-body { padding: .5rem; }
+    }
+    .loc-card { margin-bottom: .5rem; }
+</style>
+
+<body>
+<a-layout id="app" v-cloak :class="themeSwitcher.currentTheme">
+    {{ template "commonSider" . }}
+    <a-layout id="content-layout">
+        <a-layout-content>
+            <a-spin :spinning="spinning" :delay="500" tip='{{ i18n "loading"}}'>
+                <a-space direction="vertical" style="width:100%">
+
+                    <a-card class="loc-card" hoverable title='{{ i18n "pages.reality.sourceInbounds" }}'>
+                        <p>{{ i18n "pages.reality.sourceDesc" }}</p>
+                        <a-select mode="multiple" show-search option-filter-prop="children" style="min-width: 260px; margin-right: 10px"
+                                  :dropdown-class-name="themeSwitcher.currentTheme"
+                                  :placeholder="'{{ i18n "pages.reality.selectSource" }}'"
+                                  v-model="masterInboundIds">
+                            <a-select-option v-for="ib in inbounds" :key="ib.id" :value="ib.id">
+                                [[ ib.remark || ('#' + ib.id) ]] (:[[ ib.port ]])
+                            </a-select-option>
+                        </a-select>
+                        <a-button type="primary" @click="saveMaster">{{ i18n "pages.reality.save" }}</a-button>
+                    </a-card>
+
+                    <a-card class="loc-card" hoverable title='{{ i18n "pages.reality.realityList" }}'>
+                        <template slot="extra">
+                            <a-button type="primary" icon="plus" @click="openAddReality">{{ i18n "pages.reality.addReality" }}</a-button>
+                        </template>
+                        <a-table :columns="columns" :data-source="realities" :pagination="false" row-key="id" :scroll="{ x: true }">
+                            <template slot="inbound" slot-scope="text, item">
+                                [[ inboundLabel(item.inboundId) ]]
+                            </template>
+                            <template slot="enable" slot-scope="text, item">
+                                <a-switch :checked="item.enable" @change="toggleEnable(item)"></a-switch>
+                            </template>
+                            <template slot="action" slot-scope="text, item">
+                                <a-button icon="delete" type="danger" @click="deleteReality(item)"></a-button>
+                            </template>
+                        </a-table>
+                        <a-empty v-if="realities.length === 0" description='{{ i18n "pages.reality.noReality" }}'></a-empty>
+                    </a-card>
+
+                </a-space>
+
+                <a-modal v-model="addModal.visible" title='{{ i18n "pages.reality.addReality" }}'
+                         :class="themeSwitcher.currentTheme" @ok="proceedToInbound"
+                         :ok-text="'{{ i18n "pages.reality.next" }}'" cancel-text='{{ i18n "pages.reality.cancel" }}' centered>
+                    <p>{{ i18n "pages.reality.addRealityDesc" }}</p>
+                    <a-form-model layout="vertical">
+                        <a-form-model-item label='{{ i18n "pages.reality.remark" }}' help='{{ i18n "pages.reality.remarkDesc" }}'>
+                            <a-input v-model="addModal.remark" placeholder="reality"></a-input>
+                        </a-form-model-item>
+                    </a-form-model>
+                </a-modal>
+
+            </a-spin>
+        </a-layout-content>
+    </a-layout>
+</a-layout>
+{{template "js" .}}
+<script src="{{ .base_path }}assets/base64/base64.min.js"></script>
+<script src="{{ .base_path }}assets/qrcode/qrious.min.js"></script>
+<script src="{{ .base_path }}assets/clipboard/clipboard.min.js?{{ .cur_ver }}"></script>
+<script src="{{ .base_path }}assets/uri/URI.min.js?{{ .cur_ver }}"></script>
+<script src="{{ .base_path }}assets/js/model/inbound.js?{{ .cur_ver }}"></script>
+<script src="{{ .base_path }}assets/js/model/dbinbound.js?{{ .cur_ver }}"></script>
+{{template "component/themeSwitcher" .}}
+<script>
+    const app = new Vue({
+        delimiters: ['[[', ']]'],
+        el: '#app',
+        data: {
+            siderDrawer,
+            themeSwitcher,
+            spinning: false,
+            defaultCert: '',
+            defaultKey: '',
+            subSettings: { enable: false },
+            tgBotEnable: false,
+            trafficDiff: 0,
+            realities: [],
+            inbounds: [],
+            masterInboundIds: [],
+            addModal: { visible: false, remark: 'reality' },
+            columns: [
+                { title: '{{ i18n "pages.reality.remark" }}', dataIndex: 'remark', key: 'remark' },
+                { title: '{{ i18n "pages.reality.inbound" }}', key: 'inbound', scopedSlots: { customRender: 'inbound' } },
+                { title: '{{ i18n "pages.reality.enable" }}', key: 'enable', scopedSlots: { customRender: 'enable' } },
+                { title: '{{ i18n "pages.reality.action" }}', key: 'action', scopedSlots: { customRender: 'action' } },
+            ],
+        },
+        methods: {
+            async getRealities() {
+                const msg = await HttpUtil.get('/xui/API/locations/?type=reality');
+                if (msg.success) this.realities = msg.obj || [];
+            },
+            async getInbounds() {
+                const msg = await HttpUtil.get('/xui/API/inbounds/');
+                if (msg.success) this.inbounds = msg.obj || [];
+            },
+            async getMaster() {
+                const msg = await HttpUtil.get('/xui/API/locations/master');
+                if (msg.success) this.masterInboundIds = msg.obj || [];
+            },
+            async saveMaster() {
+                await HttpUtil.post('/xui/API/locations/master', { inboundIds: this.masterInboundIds });
+            },
+            inboundLabel(id) {
+                const ib = this.inbounds.find(x => x.id === id);
+                return ib ? ((ib.remark || ('#' + ib.id)) + ' (:' + ib.port + ')') : ('#' + id);
+            },
+            openAddReality() {
+                this.addModal = { visible: true, remark: 'reality' };
+            },
+            proceedToInbound() {
+                const remark = this.addModal.remark || 'reality';
+                this.addModal.visible = false;
+                inModal.show({
+                    title: '{{ i18n "pages.reality.addReality" }}',
+                    okText: '{{ i18n "pages.reality.save" }}',
+                    inbound: new Inbound(),
+                    dbInbound: new DBInbound(),
+                    confirm: (inbound, dbInbound) => this.createReality(remark, inbound),
+                });
+            },
+            async createReality(remark, inbound) {
+                const data = {
+                    type: 'reality',
+                    country: '',
+                    flag: '',
+                    remark: remark,
+                    domain: '',
+                    listen: inbound.listen,
+                    port: inbound.port,
+                    protocol: inbound.protocol,
+                    settings: inbound.settings.toString(),
+                    sniffing: inbound.sniffing.toString(),
+                };
+                if (inbound.canEnableStream()) {
+                    data.streamSettings = inbound.stream.toString();
+                } else if (inbound.stream && inbound.stream.sockopt) {
+                    data.streamSettings = JSON.stringify({ sockopt: inbound.stream.sockopt.toJson() }, null, 2);
+                } else {
+                    data.streamSettings = '';
+                }
+                inModal.loading(true);
+                const msg = await HttpUtil.post('/xui/API/locations/add', data);
+                inModal.loading(false);
+                if (msg.success) {
+                    inModal.close();
+                    await this.refresh();
+                }
+            },
+            async toggleEnable(item) {
+                item.enable = !item.enable;
+                await HttpUtil.post('/xui/API/locations/update/' + item.id, item);
+                await this.getRealities();
+            },
+            deleteReality(item) {
+                const self = this;
+                this.$confirm({
+                    title: '{{ i18n "pages.reality.deleteReality" }}',
+                    content: '{{ i18n "pages.reality.deleteRealityContent" }}',
+                    class: themeSwitcher.currentTheme,
+                    okText: '{{ i18n "pages.reality.delete" }}',
+                    cancelText: '{{ i18n "pages.reality.cancel" }}',
+                    async onOk() {
+                        const msg = await HttpUtil.post('/xui/API/locations/del/' + item.id);
+                        if (msg.success) await self.refresh();
+                    },
+                });
+            },
+            async refresh() {
+                await Promise.all([this.getRealities(), this.getInbounds()]);
+            },
+        },
+        async mounted() {
+            this.spinning = true;
+            await Promise.all([this.getRealities(), this.getInbounds(), this.getMaster()]);
+            this.spinning = false;
+        },
+    });
+</script>
+</body>
+</html>

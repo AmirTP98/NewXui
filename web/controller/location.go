@@ -18,6 +18,12 @@ type LocationController struct {
 }
 
 func (a *LocationController) getLocations(c *gin.Context) {
+	locType := c.Query("type")
+	if locType != "" {
+		locations, err := a.locationService.GetLocationsByType(locType)
+		jsonObj(c, locations, err)
+		return
+	}
 	locations, err := a.locationService.GetAllLocations()
 	jsonObj(c, locations, err)
 }
@@ -41,7 +47,12 @@ func (a *LocationController) addLocation(c *gin.Context) {
 		return
 	}
 
+	locType := c.PostForm("type")
+	if locType == "" {
+		locType = "location"
+	}
 	loc := &model.Location{
+		Type:    locType,
 		Country: c.PostForm("country"),
 		Flag:    c.PostForm("flag"),
 		Remark:  c.PostForm("remark"),

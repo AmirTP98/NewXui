@@ -192,7 +192,7 @@
         },
         methods: {
             async getLocations() {
-                const msg = await HttpUtil.get('/xui/API/locations/');
+                const msg = await HttpUtil.get('/xui/API/locations/?type=location');
                 if (msg.success) this.locations = msg.obj || [];
             },
             async getInbounds() {
