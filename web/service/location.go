@@ -11,8 +11,6 @@ import (
 	"github.com/alireza0/x-ui/logger"
 	"github.com/alireza0/x-ui/util/common"
 	"github.com/alireza0/x-ui/xray"
-
-	"gorm.io/gorm"
 )
 
 type LocationService struct {
@@ -173,15 +171,15 @@ func (s *LocationService) enabledLocations() ([]model.Location, error) {
 	return enabled, nil
 }
 
-// AddLocation creates the location's inbound from the given config, stores the
-// location, and replicates the master inbound's current clients onto it.
+// AddLocation creates the location's inbound from the given config and stores
+// the location. Clients are NOT copied — they are injected at runtime via
+// InjectLocationClients (Xray config) and HotAddClientsToLocations (live Xray).
 func (s *LocationService) AddLocation(loc *model.Location, inbound *model.Inbound) (*model.Location, error) {
 	if inbound == nil {
 		return nil, common.NewError("missing inbound config")
 	}
 	inboundSvc := &InboundService{}
 
-	// make the inbound's remark recognisable in the Inbounds page
 	if inbound.Remark == "" {
 		inbound.Remark = strings.TrimSpace(loc.Flag + " " + loc.Remark)
 	}
@@ -197,11 +195,11 @@ func (s *LocationService) AddLocation(loc *model.Location, inbound *model.Inboun
 		return nil, err
 	}
 
-	// replicate existing clients from every master inbound onto the new location
+	// Hot-add existing master clients to the new location inbound in Xray
 	if masters, err := s.getMasterInbounds(); err == nil {
 		for _, master := range masters {
 			if clients, err := inboundSvc.GetClients(master); err == nil && len(clients) > 0 {
-				s.applyClientsToLocation(*loc, clients, false)
+				s.HotAddClientsToLocations(master, clients)
 			}
 		}
 	}
@@ -229,165 +227,149 @@ func (s *LocationService) DeleteLocation(id int) error {
 	return db.Delete(&model.Location{}, id).Error
 }
 
-// ----- fan-out from master client operations (async, local) -----
+// ----- hot-reload: Xray API only, zero DB writes -----
 
-func (s *LocationService) FanOutAddClients(clients []model.Client) {
+// HotAddClientsToLocations adds clients to every location inbound in the
+// running Xray instance via gRPC API. No database writes.
+func (s *LocationService) HotAddClientsToLocations(masterInbound *model.Inbound, clients []model.Client) {
 	go func() {
-		defer recoverLog("FanOutAddClients")
+		defer recoverLog("HotAddClientsToLocations")
 		locs, err := s.enabledLocations()
-		if err != nil {
-			logger.Warning("FanOutAddClients: ", err)
+		if err != nil || len(locs) == 0 {
 			return
 		}
-		for _, loc := range locs {
-			s.applyClientsToLocation(loc, clients, false)
-		}
-	}()
-}
-
-func (s *LocationService) FanOutUpdateClient(oldClientId string, client model.Client) {
-	go func() {
-		defer recoverLog("FanOutUpdateClient")
-		locs, err := s.enabledLocations()
-		if err != nil {
-			logger.Warning("FanOutUpdateClient: ", err)
-			return
-		}
-		for _, loc := range locs {
-			s.applyClientsToLocationUpdate(loc, oldClientId, client)
-		}
-	}()
-}
-
-func (s *LocationService) FanOutDelClient(clientId, baseEmail string) {
-	go func() {
-		defer recoverLog("FanOutDelClient")
-		locs, err := s.enabledLocations()
-		if err != nil {
-			logger.Warning("FanOutDelClient: ", err)
-			return
-		}
-		db := database.GetDB()
 		inboundSvc := &InboundService{}
-		for _, loc := range locs {
-			if _, err := inboundSvc.DelInboundClient(loc.InboundId, clientId); err != nil {
-				logger.Warning("FanOutDelClient: ", err)
-			}
-			if baseEmail != "" {
-				db.Where("inbound_id = ? AND email = ?", loc.InboundId, locationClientEmail(baseEmail, loc)).
-					Delete(&model.LocationTrafficSnapshot{})
-			}
-		}
-	}()
-}
-
-func (s *LocationService) FanOutResetTraffic(baseEmail string) {
-	if baseEmail == "" {
-		return
-	}
-	go func() {
-		defer recoverLog("FanOutResetTraffic")
-		locs, err := s.enabledLocations()
-		if err != nil {
-			logger.Warning("FanOutResetTraffic: ", err)
+		if p == nil {
 			return
 		}
-		db := database.GetDB()
-		inboundSvc := &InboundService{}
+		if err := inboundSvc.xrayApi.Init(p.GetAPIPort()); err != nil {
+			return
+		}
+		defer inboundSvc.xrayApi.Close()
+
 		for _, loc := range locs {
-			email := locationClientEmail(baseEmail, loc)
-			if _, err := inboundSvc.ResetClientTraffic(loc.InboundId, email); err != nil {
-				logger.Warning("FanOutResetTraffic: ", err)
+			inbound, err := inboundSvc.GetInbound(loc.InboundId)
+			if err != nil || !inbound.Enable {
+				continue
 			}
-			db.Where("inbound_id = ? AND email = ?", loc.InboundId, email).
-				Delete(&model.LocationTrafficSnapshot{})
+			for _, client := range clients {
+				sc := locationSuffixedClient(client, loc)
+				if !sc.Enable {
+					continue
+				}
+				var settings map[string]interface{}
+				json.Unmarshal([]byte(inbound.Settings), &settings)
+				cipher := ""
+				if inbound.Protocol == "shadowsocks" {
+					if m, ok := settings["method"].(string); ok {
+						cipher = m
+					}
+				}
+				inboundSvc.xrayApi.AddUser(string(inbound.Protocol), inbound.Tag, map[string]interface{}{
+					"email": sc.Email, "id": sc.ID, "flow": sc.Flow,
+					"password": sc.Password, "cipher": cipher,
+				})
+			}
 		}
 	}()
 }
 
-func (s *LocationService) applyClientsToLocation(loc model.Location, clients []model.Client, update bool) {
-	inboundSvc := &InboundService{}
-	for _, base := range clients {
-		sc := locationSuffixedClient(base, loc)
-		settings, err := json.Marshal(map[string]interface{}{"clients": []model.Client{sc}})
-		if err != nil {
-			continue
+// HotUpdateClientInLocations removes old user and adds updated one on every
+// location inbound via Xray API.
+func (s *LocationService) HotUpdateClientInLocations(oldClient, newClient model.Client) {
+	go func() {
+		defer recoverLog("HotUpdateClientInLocations")
+		locs, err := s.enabledLocations()
+		if err != nil || len(locs) == 0 {
+			return
 		}
-		data := &model.Inbound{Id: loc.InboundId, Settings: string(settings)}
-		if update {
-			if _, err := inboundSvc.UpdateInboundClient(data, base.ID); err != nil {
-				logger.Warning("applyClientsToLocation update: ", err)
+		inboundSvc := &InboundService{}
+		if p == nil {
+			return
+		}
+		if err := inboundSvc.xrayApi.Init(p.GetAPIPort()); err != nil {
+			return
+		}
+		defer inboundSvc.xrayApi.Close()
+
+		for _, loc := range locs {
+			inbound, err := inboundSvc.GetInbound(loc.InboundId)
+			if err != nil || !inbound.Enable {
+				continue
 			}
-		} else {
-			if _, err := inboundSvc.AddInboundClient(data); err != nil {
-				logger.Warning("applyClientsToLocation add: ", err)
+			oldSc := locationSuffixedClient(oldClient, loc)
+			inboundSvc.xrayApi.RemoveUser(inbound.Tag, oldSc.Email)
+
+			newSc := locationSuffixedClient(newClient, loc)
+			if !newSc.Enable {
+				continue
 			}
+			var settings map[string]interface{}
+			json.Unmarshal([]byte(inbound.Settings), &settings)
+			cipher := ""
+			if inbound.Protocol == "shadowsocks" {
+				if m, ok := settings["method"].(string); ok {
+					cipher = m
+				}
+			}
+			inboundSvc.xrayApi.AddUser(string(inbound.Protocol), inbound.Tag, map[string]interface{}{
+				"email": newSc.Email, "id": newSc.ID, "flow": newSc.Flow,
+				"password": newSc.Password, "cipher": cipher,
+			})
 		}
-	}
+	}()
 }
 
-func (s *LocationService) applyClientsToLocationUpdate(loc model.Location, oldClientId string, client model.Client) {
-	s.applyClientsToLocationOne(loc, oldClientId, client, true)
+// HotDelClientFromLocations removes a client from every location inbound
+// via Xray API. No database writes.
+func (s *LocationService) HotDelClientFromLocations(client model.Client) {
+	go func() {
+		defer recoverLog("HotDelClientFromLocations")
+		locs, err := s.enabledLocations()
+		if err != nil || len(locs) == 0 {
+			return
+		}
+		inboundSvc := &InboundService{}
+		if p == nil {
+			return
+		}
+		if err := inboundSvc.xrayApi.Init(p.GetAPIPort()); err != nil {
+			return
+		}
+		defer inboundSvc.xrayApi.Close()
+
+		for _, loc := range locs {
+			inbound, err := inboundSvc.GetInbound(loc.InboundId)
+			if err != nil {
+				continue
+			}
+			sc := locationSuffixedClient(client, loc)
+			inboundSvc.xrayApi.RemoveUser(inbound.Tag, sc.Email)
+		}
+	}()
 }
 
-func (s *LocationService) applyClientsToLocationOne(loc model.Location, oldClientId string, base model.Client, update bool) {
-	inboundSvc := &InboundService{}
-	sc := locationSuffixedClient(base, loc)
-	settings, err := json.Marshal(map[string]interface{}{"clients": []model.Client{sc}})
+// HotDisableClientInLocations removes a client from every location inbound
+// in the running Xray when the master client exceeds its quota.
+func (s *LocationService) HotDisableClientInLocations(client model.Client) {
+	s.HotDelClientFromLocations(client)
+}
+
+// ----- traffic: location suffix helpers (used by addClientTraffic) -----
+
+// LocationSuffixes returns the "-suffix" strings for all enabled locations.
+// Used by addClientTraffic to detect location-suffixed emails and attribute
+// their traffic to the master client.
+func (s *LocationService) LocationSuffixes() []string {
+	locs, err := s.enabledLocations()
 	if err != nil {
-		return
-	}
-	data := &model.Inbound{Id: loc.InboundId, Settings: string(settings)}
-	if update {
-		if _, err := inboundSvc.UpdateInboundClient(data, oldClientId); err != nil {
-			logger.Warning("applyClientsToLocationOne update: ", err)
-		}
-	} else {
-		if _, err := inboundSvc.AddInboundClient(data); err != nil {
-			logger.Warning("applyClientsToLocationOne add: ", err)
-		}
-	}
-}
-
-// ----- traffic aggregation -----
-
-func (s *LocationService) GetTrafficSnapshot(inboundId int, email string) (*model.LocationTrafficSnapshot, error) {
-	db := database.GetDB()
-	var snap model.LocationTrafficSnapshot
-	err := db.Where("inbound_id = ? AND email = ?", inboundId, email).First(&snap).Error
-	if err != nil {
-		if database.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &snap, nil
-}
-
-func (s *LocationService) SaveTrafficSnapshot(inboundId int, email string, up, down int64) error {
-	db := database.GetDB()
-	existing, err := s.GetTrafficSnapshot(inboundId, email)
-	if err != nil {
-		return err
-	}
-	snap := model.LocationTrafficSnapshot{InboundId: inboundId, Email: email, Up: up, Down: down}
-	if existing != nil {
-		snap.Id = existing.Id
-	}
-	return db.Save(&snap).Error
-}
-
-// ApplyTrafficDelta adds deltaUp/deltaDown to the master client's traffic.
-func (s *LocationService) ApplyTrafficDelta(email string, deltaUp, deltaDown int64) error {
-	if deltaUp == 0 && deltaDown == 0 {
 		return nil
 	}
-	db := database.GetDB()
-	return db.Model(&xray.ClientTraffic{}).Where("email = ?", email).
-		Updates(map[string]interface{}{
-			"up":   gorm.Expr("up + ?", deltaUp),
-			"down": gorm.Expr("down + ?", deltaDown),
-		}).Error
+	suffixes := make([]string, 0, len(locs))
+	for _, loc := range locs {
+		suffixes = append(suffixes, "-"+locationSuffix(loc))
+	}
+	return suffixes
 }
 
 // MasterClientEmails returns the unique emails of all clients across every
@@ -424,4 +406,121 @@ func recoverLog(where string) {
 	if r := recover(); r != nil {
 		logger.Warning(where, " panic recovered: ", r)
 	}
+}
+
+// InjectLocationClients populates every location inbound's settings with the
+// master inbound clients (suffixed emails). This is an in-memory operation —
+// nothing is written back to the DB. Called from GetXrayConfig so Xray sees
+// real clients on every location inbound even though the DB stores them empty.
+func (s *LocationService) InjectLocationClients(inbounds []*model.Inbound) {
+	locs, err := s.enabledLocations()
+	if err != nil || len(locs) == 0 {
+		return
+	}
+	locMap := make(map[int]model.Location, len(locs))
+	for _, l := range locs {
+		locMap[l.InboundId] = l
+	}
+
+	masterIds := s.GetMasterInboundIds()
+	if len(masterIds) == 0 {
+		return
+	}
+	masterIdSet := make(map[int]bool, len(masterIds))
+	for _, id := range masterIds {
+		masterIdSet[id] = true
+	}
+
+	// Collect all master clients
+	inboundSvc := &InboundService{}
+	var allMasterClients []model.Client
+	for _, inbound := range inbounds {
+		if !masterIdSet[inbound.Id] {
+			continue
+		}
+		clients, err := inboundSvc.GetClients(inbound)
+		if err != nil {
+			continue
+		}
+		allMasterClients = append(allMasterClients, clients...)
+	}
+	if len(allMasterClients) == 0 {
+		return
+	}
+
+	// Inject into each location inbound
+	injected := 0
+	for _, inbound := range inbounds {
+		loc, isLocation := locMap[inbound.Id]
+		if !isLocation {
+			continue
+		}
+		var settings map[string]interface{}
+		json.Unmarshal([]byte(inbound.Settings), &settings)
+		if settings == nil {
+			settings = map[string]interface{}{}
+		}
+		locClients := make([]model.Client, 0, len(allMasterClients))
+		for _, mc := range allMasterClients {
+			locClients = append(locClients, locationSuffixedClient(mc, loc))
+		}
+		settings["clients"] = locClients
+		newSettings, err := json.Marshal(settings)
+		if err != nil {
+			continue
+		}
+		inbound.Settings = string(newSettings)
+		injected += len(locClients)
+	}
+	if injected > 0 {
+		logger.Debugf("InjectLocationClients: %d clients across %d locations", injected, len(locs))
+	}
+}
+
+// MigrateLocationClientsToVirtual strips clients from location inbound settings
+// and removes orphaned location client_traffics rows. Run once at startup.
+func (s *LocationService) MigrateLocationClientsToVirtual() {
+	db := database.GetDB()
+
+	// Check if already migrated
+	var done string
+	db.Model(&model.Setting{}).Where("`key` = ?", "locationVirtualMigrated").Select("value").Scan(&done)
+	if done == "true" {
+		return
+	}
+
+	locs, err := s.enabledLocations()
+	if err != nil || len(locs) == 0 {
+		db.Create(&model.Setting{Key: "locationVirtualMigrated", Value: "true"})
+		return
+	}
+
+	suffixes := s.LocationSuffixes()
+
+	// Strip clients from location inbound settings
+	for _, loc := range locs {
+		var inbound model.Inbound
+		if db.First(&inbound, loc.InboundId).Error != nil {
+			continue
+		}
+		var settings map[string]interface{}
+		json.Unmarshal([]byte(inbound.Settings), &settings)
+		if settings == nil {
+			continue
+		}
+		settings["clients"] = []interface{}{}
+		newSettings, _ := json.Marshal(settings)
+		db.Model(&model.Inbound{}).Where("id = ?", loc.InboundId).Update("settings", string(newSettings))
+	}
+
+	// Delete location-suffixed client_traffics rows
+	for _, suf := range suffixes {
+		db.Where("email LIKE ?", "%"+suf).Delete(&xray.ClientTraffic{})
+	}
+
+	// Delete all location_traffic_snapshots
+	db.Exec("DELETE FROM location_traffic_snapshots")
+
+	db.Create(&model.Setting{Key: "locationVirtualMigrated", Value: "true"})
+	logger.Info("MigrateLocationClientsToVirtual: completed")
 }

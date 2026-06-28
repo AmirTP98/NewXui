@@ -99,6 +99,11 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Inject master clients into location inbounds (in-memory only, no DB writes)
+	locSvc := LocationService{}
+	locSvc.InjectLocationClients(inbounds)
+
 	for _, inbound := range inbounds {
 		if !inbound.Enable {
 			continue

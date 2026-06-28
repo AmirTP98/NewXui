@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/alireza0/x-ui/config"
+	"github.com/alireza0/x-ui/database"
 	"github.com/alireza0/x-ui/logger"
 	"github.com/alireza0/x-ui/util/common"
 	"github.com/alireza0/x-ui/web/controller"
@@ -258,9 +259,8 @@ func (s *Server) startTask() {
 	// Check whether xray is running every 30 seconds
 	s.cron.AddJob("@every 30s", job.NewCheckXrayRunningJob())
 
-	// Sync location inbounds' traffic onto their master client (rate-limited to
-	// locationSyncIntervalSec by the job itself)
-	s.cron.AddJob("@every 10s", job.NewSyncLocationTrafficJob())
+	// Database health check every 30 minutes (corruption early detection)
+	s.cron.AddJob("@every 1800s", job.NewCheckDatabaseHealthJob())
 
 	// Check if xray needs to be restarted
 	s.cron.AddFunc("@every 10s", func() {
@@ -312,6 +312,15 @@ func (s *Server) Start() (err error) {
 			s.Stop()
 		}
 	}()
+
+	// Create automatic database backup at startup (protection against corruption)
+	dbPath := os.Getenv("X_UI_DB_PATH")
+	if dbPath == "" {
+		dbPath = "x-ui.db"
+	}
+	if err := database.BackupDB(dbPath); err != nil {
+		logger.Warning("Database backup failed at startup:", err)
+	}
 
 	loc, err := s.settingService.GetTimeLocation()
 	if err != nil {

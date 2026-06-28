@@ -103,18 +103,73 @@ func (s *SubService) GetSubs(subId string, host string) ([]string, string, error
 				}
 			}
 
-			// Accumulate traffic from per-client ClientTraffic record.
-			ct := s.getClientTraffics(inbound.ClientStats, client.Email)
-			traffic.Up += ct.Up
-			traffic.Down += ct.Down
-			if ct.Total == 0 {
-				unlimitedTotal = true
-			} else if !unlimitedTotal {
-				traffic.Total += ct.Total
+			// Accumulate traffic only from master (non-location) inbounds.
+			// Location inbounds mirror the master's clients and their traffic is
+			// already synced back to the master client, so counting them here would
+			// multiply the quota by the number of locations.
+			if _, isLocation := s.locByInbound[inbound.Id]; !isLocation {
+				ct := s.getClientTraffics(inbound.ClientStats, client.Email)
+				traffic.Up += ct.Up
+				traffic.Down += ct.Down
+				if ct.Total == 0 {
+					unlimitedTotal = true
+				} else if !unlimitedTotal {
+					traffic.Total += ct.Total
+				}
+				if ct.ExpiryTime > 0 {
+					if traffic.ExpiryTime == 0 || ct.ExpiryTime < traffic.ExpiryTime {
+						traffic.ExpiryTime = ct.ExpiryTime
+					}
+				}
 			}
-			if ct.ExpiryTime > 0 {
-				if traffic.ExpiryTime == 0 || ct.ExpiryTime < traffic.ExpiryTime {
-					traffic.ExpiryTime = ct.ExpiryTime
+		}
+	}
+
+	// Generate location links: for every enabled location, build links using
+	// the location inbound's infrastructure (port/stream) + each matching
+	// master client's credentials. Location inbounds have no clients in the
+	// DB — they are virtual.
+	for locInboundId, loc := range s.locByInbound {
+		if !loc.Enable {
+			continue
+		}
+		locInbound, err := s.inboundService.GetInbound(locInboundId)
+		if err != nil || !locInbound.Enable {
+			continue
+		}
+		if len(locInbound.Listen) > 0 && locInbound.Listen[0] == '@' {
+			listen, port, streamSettings, err := s.getFallbackMaster(locInbound.Listen, locInbound.StreamSettings)
+			if err == nil {
+				locInbound.Listen = listen
+				locInbound.Port = port
+				locInbound.StreamSettings = streamSettings
+			}
+		}
+		for _, inbound := range inbounds {
+			if _, isLoc := s.locByInbound[inbound.Id]; isLoc {
+				continue
+			}
+			clients, err := s.inboundService.GetClients(inbound)
+			if err != nil {
+				continue
+			}
+			for _, client := range clients {
+				if client.SubID != subId || !client.Enable {
+					continue
+				}
+				// Build a temporary inbound with location config + master client
+				tmpInbound := *locInbound
+				tmpSettings := map[string]interface{}{}
+				json.Unmarshal([]byte(tmpInbound.Settings), &tmpSettings)
+				tmpSettings["clients"] = []model.Client{client}
+				newSettings, _ := json.Marshal(tmpSettings)
+				tmpInbound.Settings = string(newSettings)
+
+				link := s.getLink(&tmpInbound, client.Email)
+				for _, singleLink := range strings.Split(link, "\n") {
+					if trimmed := strings.TrimSpace(singleLink); trimmed != "" {
+						result = append(result, trimmed)
+					}
 				}
 			}
 		}
@@ -943,6 +998,8 @@ func (s *SubService) genRemark(inbound *model.Inbound, email string, extra strin
 			base = name
 		}
 		name = loc.Flag + base
+	} else if inbound.Flag != "" {
+		name = inbound.Flag + name
 	}
 
 	if !s.showInfo {

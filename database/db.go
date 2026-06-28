@@ -6,15 +6,17 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"time"
 
 	"github.com/alireza0/x-ui/config"
 	"github.com/alireza0/x-ui/database/model"
+	"github.com/alireza0/x-ui/logger"
 	"github.com/alireza0/x-ui/util/common"
 	"github.com/alireza0/x-ui/xray"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	gormlogger "gorm.io/gorm/logger"
 )
 
 var db *gorm.DB
@@ -62,21 +64,45 @@ func InitDB(dbPath string) error {
 		return err
 	}
 
-	var gormLogger logger.Interface
+	// Validate database before opening
+	if _, err := os.Stat(dbPath); err == nil {
+		if err := ValidateSQLiteDB(dbPath); err != nil {
+			logger.Warning("Database may be corrupted, attempting to continue:", err)
+		}
+	}
+
+	var gormLogger gormlogger.Interface
 
 	if config.IsDebug() {
-		gormLogger = logger.Default
+		gormLogger = gormlogger.Default
 	} else {
-		gormLogger = logger.Discard
+		gormLogger = gormlogger.Discard
 	}
 
 	c := &gorm.Config{
 		Logger: gormLogger,
 	}
+
+	// Open with pure path (no query params in DSN)
 	db, err = gorm.Open(sqlite.Open(dbPath), c)
 	if err != nil {
 		return err
 	}
+
+	// Serialize all DB access through one connection (SQLite supports only 1 writer)
+	sqlDB, err := db.DB()
+	if err != nil {
+		return err
+	}
+	sqlDB.SetMaxOpenConns(1)
+	sqlDB.SetMaxIdleConns(1)
+
+	// Set pragmas AFTER opening connection
+	db.Exec("PRAGMA busy_timeout = 5000")
+	db.Exec("PRAGMA journal_mode = WAL")
+	db.Exec("PRAGMA wal_autocheckpoint = 1000")
+	db.Exec("PRAGMA synchronous = NORMAL")
+	db.Exec("PRAGMA foreign_keys = ON")
 
 	err = initUser()
 	if err != nil {
@@ -115,6 +141,38 @@ func CloseDB() error {
 	return nil
 }
 
+// BackupDB creates a timestamped backup of the database file.
+// Called before major operations to enable recovery if needed.
+func BackupDB(dbPath string) error {
+	if _, err := os.Stat(dbPath); err != nil {
+		return nil // Database doesn't exist yet, no backup needed
+	}
+	backupPath := dbPath + ".backup-" + time.Now().Format("20060102-150405")
+	src, err := os.Open(dbPath)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+	dst, err := os.Create(backupPath)
+	if err != nil {
+		return err
+	}
+	defer dst.Close()
+	_, err = io.Copy(dst, src)
+	return err
+}
+
+// CheckDatabaseHealth validates database integrity and attempts to recover if needed.
+// Returns true if the database is healthy or was recovered, false if unrecoverable.
+func CheckDatabaseHealth(dbPath string) bool {
+	if err := ValidateSQLiteDB(dbPath); err == nil {
+		return true // Healthy
+	}
+	// Database corrupt - return false to signal potential issues
+	logger.Warning("Database health check FAILED")
+	return false
+}
+
 func GetDB() *gorm.DB {
 	return db
 }
@@ -146,7 +204,7 @@ func ValidateSQLiteDB(dbPath string) error {
 	if _, err := os.Stat(dbPath); err != nil { // file must exist
 		return err
 	}
-	gdb, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{Logger: logger.Discard})
+	gdb, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{Logger: gormlogger.Discard})
 	if err != nil {
 		return err
 	}

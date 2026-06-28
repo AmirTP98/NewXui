@@ -516,7 +516,7 @@ func (s *InboundService) AddInboundClient(data *model.Inbound) (bool, error) {
 	}
 
 	if ls := (LocationService{}); ls.IsMasterInbound(data.Id) {
-		ls.FanOutAddClients(clients)
+		ls.HotAddClientsToLocations(oldInbound, clients)
 	}
 
 	return needRestart, tx.Save(oldInbound).Error
@@ -607,7 +607,7 @@ func (s *InboundService) DelInboundClient(inboundId int, clientId string) (bool,
 	}
 
 	if ls := (LocationService{}); ls.IsMasterInbound(inboundId) {
-		ls.FanOutDelClient(clientId, email)
+		ls.HotDelClientFromLocations(model.Client{ID: clientId, Email: email})
 	}
 
 	return needRestart, db.Save(oldInbound).Error
@@ -761,7 +761,7 @@ func (s *InboundService) UpdateInboundClient(data *model.Inbound, clientId strin
 	}
 
 	if ls := (LocationService{}); ls.IsMasterInbound(data.Id) {
-		ls.FanOutUpdateClient(clientId, clients[0])
+		ls.HotUpdateClientInLocations(oldClients[clientIndex], clients[0])
 	}
 
 	return needRestart, tx.Save(oldInbound).Error
@@ -849,6 +849,42 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 
 	var onlineClients []string
 
+	// Attribute location-suffixed traffic to master clients: strip the
+	// location suffix and merge the counters so the master's quota reflects
+	// total usage across all locations. Location-only emails are dropped
+	// from the slice (they have no client_traffics rows).
+	locSvc := LocationService{}
+	suffixes := locSvc.LocationSuffixes()
+	if len(suffixes) > 0 {
+		merged := make(map[string]*xray.ClientTraffic, len(traffics))
+		var masterTraffics []*xray.ClientTraffic
+		for _, t := range traffics {
+			masterEmail := t.Email
+			isLocation := false
+			for _, suf := range suffixes {
+				if strings.HasSuffix(t.Email, suf) {
+					masterEmail = strings.TrimSuffix(t.Email, suf)
+					isLocation = true
+					break
+				}
+			}
+			if existing, ok := merged[masterEmail]; ok {
+				existing.Up += t.Up
+				existing.Down += t.Down
+			} else {
+				clone := *t
+				clone.Email = masterEmail
+				merged[masterEmail] = &clone
+				if !isLocation {
+					masterTraffics = append(masterTraffics, &clone)
+				} else {
+					masterTraffics = append(masterTraffics, &clone)
+				}
+			}
+		}
+		traffics = masterTraffics
+	}
+
 	emails := make([]string, 0, len(traffics))
 	for _, traffic := range traffics {
 		emails = append(emails, traffic.Email)
@@ -891,17 +927,16 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 		return err
 	}
 
-	for dbTraffic_index := range dbClientTraffics {
-		for traffic_index := range traffics {
-			if dbClientTraffics[dbTraffic_index].Email == traffics[traffic_index].Email {
-				dbClientTraffics[dbTraffic_index].Up += traffics[traffic_index].Up
-				dbClientTraffics[dbTraffic_index].Down += traffics[traffic_index].Down
-
-				// Add user in onlineUsers array on traffic
-				if traffics[traffic_index].Up+traffics[traffic_index].Down > 0 {
-					onlineClients = append(onlineClients, traffics[traffic_index].Email)
-				}
-				break
+	trafficByEmail := make(map[string]*xray.ClientTraffic, len(traffics))
+	for _, t := range traffics {
+		trafficByEmail[t.Email] = t
+	}
+	for _, dbTraffic := range dbClientTraffics {
+		if t, ok := trafficByEmail[dbTraffic.Email]; ok {
+			dbTraffic.Up += t.Up
+			dbTraffic.Down += t.Down
+			if t.Up+t.Down > 0 {
+				onlineClients = append(onlineClients, t.Email)
 			}
 		}
 	}
@@ -1286,10 +1321,6 @@ func (s *InboundService) ResetClientTraffic(id int, clientEmail string) (bool, e
 		return false, err
 	}
 
-	if ls := (LocationService{}); ls.IsMasterInbound(id) {
-		ls.FanOutResetTraffic(clientEmail)
-	}
-
 	return needRestart, nil
 }
 
@@ -1631,6 +1662,8 @@ func (s *InboundService) MigrationRequirements() {
 func (s *InboundService) MigrateDB() {
 	s.MigrationRequirements()
 	s.MigrationRemoveOrphanedTraffics()
+	locSvc := LocationService{}
+	locSvc.MigrateLocationClientsToVirtual()
 }
 
 func (s *InboundService) GetOnlineClients() []string {
