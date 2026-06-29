@@ -89,13 +89,13 @@ func InitDB(dbPath string) error {
 		return err
 	}
 
-	// Allow concurrent reads (WAL mode supports this) but SQLite still
-	// serializes writes internally via busy_timeout.
+	// 2 connections: one for the active writer, one for concurrent reads.
+	// More than 2 causes index corruption under heavy write contention.
 	sqlDB, err := db.DB()
 	if err != nil {
 		return err
 	}
-	sqlDB.SetMaxOpenConns(4)
+	sqlDB.SetMaxOpenConns(2)
 	sqlDB.SetMaxIdleConns(2)
 
 	// Set pragmas AFTER opening connection
