@@ -160,17 +160,21 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 		}
 
 		if len(inbound.StreamSettings) > 0 {
-			// Unmarshal stream JSON
 			var stream map[string]interface{}
 			json.Unmarshal([]byte(inbound.StreamSettings), &stream)
 
-			// Remove the "settings" field under "tlsSettings" and "realitySettings"
 			tlsSettings, ok1 := stream["tlsSettings"].(map[string]interface{})
 			realitySettings, ok2 := stream["realitySettings"].(map[string]interface{})
 			if ok1 || ok2 {
 				if ok1 {
 					delete(tlsSettings, "settings")
 				} else if ok2 {
+					// Skip broken reality inbounds (no privateKey = Xray crash)
+					pk, _ := realitySettings["privateKey"].(string)
+					if pk == "" {
+						logger.Warning("Skipping inbound ", inbound.Tag, ": empty reality privateKey")
+						continue
+					}
 					delete(realitySettings, "settings")
 				}
 			}
