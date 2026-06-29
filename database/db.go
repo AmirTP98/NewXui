@@ -83,31 +83,13 @@ func InitDB(dbPath string) error {
 		Logger: gormLogger,
 	}
 
-	// Open with pure path (no query params in DSN)
 	db, err = gorm.Open(sqlite.Open(dbPath), c)
 	if err != nil {
 		return err
 	}
 
-	// WAL mode allows concurrent readers with one writer. busy_timeout
-	// makes writers wait instead of failing. Previous corruption was from
-	// heavy integrity_check + FanOut goroutines — both now removed.
-	sqlDB, err := db.DB()
-	if err != nil {
-		return err
-	}
-	sqlDB.SetMaxOpenConns(1)
-	sqlDB.SetMaxIdleConns(1)
-
-	// Set pragmas AFTER opening connection
-	db.Exec("PRAGMA busy_timeout = 60000")
-	db.Exec("PRAGMA journal_mode = WAL")
-	db.Exec("PRAGMA wal_autocheckpoint = 1000")
-	db.Exec("PRAGMA synchronous = NORMAL")
+	db.Exec("PRAGMA busy_timeout = 5000")
 	db.Exec("PRAGMA foreign_keys = OFF")
-
-	// Rebuild corrupted indexes at startup
-	db.Exec("REINDEX")
 
 	err = initUser()
 	if err != nil {
