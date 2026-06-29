@@ -105,6 +105,9 @@ func InitDB(dbPath string) error {
 	db.Exec("PRAGMA synchronous = NORMAL")
 	db.Exec("PRAGMA foreign_keys = ON")
 
+	// Rebuild corrupted indexes at startup
+	db.Exec("REINDEX")
+
 	err = initUser()
 	if err != nil {
 		return err

@@ -115,6 +115,7 @@ func (a *APIController) serverApi(api *gin.RouterGroup) {
 		{"POST", "/installXray/:version", a.serverController.installXray},
 		{"POST", "/logs/:count", a.serverController.getLogs},
 		{"GET", "/dbHealth", a.dbHealth},
+		{"POST", "/dbRepair", a.dbRepair},
 		{"GET", "/syncStatus", a.syncStatus},
 	}
 
@@ -144,4 +145,13 @@ func (a *APIController) dbHealth(c *gin.Context) {
 	}
 	healthy := result == "ok"
 	jsonObj(c, map[string]interface{}{"healthy": healthy, "result": result}, nil)
+}
+
+func (a *APIController) dbRepair(c *gin.Context) {
+	db := database.GetDB()
+	db.Exec("REINDEX")
+	var result string
+	db.Raw("PRAGMA integrity_check;").Scan(&result)
+	healthy := result == "ok"
+	jsonObj(c, map[string]interface{}{"repaired": healthy, "result": result}, nil)
 }

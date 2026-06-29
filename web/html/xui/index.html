@@ -628,8 +628,15 @@
                     if (msg.obj.healthy) {
                         this.dbHealth = { text: 'DB OK ✓', color: 'green' };
                     } else {
-                        this.dbHealth = { text: 'DB CORRUPT ✗', color: 'red' };
-                        this.$error({ title: 'Database Problem', content: msg.obj.result });
+                        this.dbHealth = { text: 'Repairing...', color: 'orange' };
+                        const repair = await HttpUtil.post('xui/API/server/dbRepair');
+                        if (repair.success && repair.obj && repair.obj.repaired) {
+                            this.dbHealth = { text: 'DB Repaired ✓', color: 'green' };
+                            this.$success({ title: 'Database Repaired', content: 'REINDEX completed successfully' });
+                        } else {
+                            this.dbHealth = { text: 'DB CORRUPT ✗', color: 'red' };
+                            this.$error({ title: 'Database Problem', content: (repair.obj && repair.obj.result) || msg.obj.result });
+                        }
                     }
                 } else {
                     this.dbHealth = { text: 'Check Failed', color: 'orange' };
