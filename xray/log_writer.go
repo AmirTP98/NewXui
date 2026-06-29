@@ -44,8 +44,8 @@ func (lw *LogWriter) Write(m []byte) (n int, err error) {
 			msgBodyLower := strings.ToLower(msgBody)
 
 			if strings.Contains(msgBodyLower, "tls handshake error") ||
-				strings.Contains(msgBodyLower, "connection ends") {
-				logger.Debug("XRAY: " + msgBody)
+				strings.Contains(msgBodyLower, "connection ends") ||
+				strings.Contains(msgBodyLower, "deprecated") {
 				lw.lastLine = ""
 				continue
 			}
@@ -71,9 +71,9 @@ func (lw *LogWriter) Write(m []byte) (n int, err error) {
 			msgLower := strings.ToLower(msg)
 
 			if strings.Contains(msgLower, "tls handshake error") ||
-				strings.Contains(msgLower, "connection ends") {
-				logger.Debug("XRAY: " + msg)
-				lw.lastLine = msg
+				strings.Contains(msgLower, "connection ends") ||
+				strings.Contains(msgLower, "deprecated") {
+				lw.lastLine = ""
 				continue
 			}
 
