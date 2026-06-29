@@ -789,44 +789,54 @@ func (s *InboundService) UpdateInboundClient(data *model.Inbound, clientId strin
 
 func (s *InboundService) AddTraffic(inboundTraffics []*xray.Traffic, clientTraffics []*xray.ClientTraffic) (error, bool) {
 	var err error
-	db := database.GetDB()
-	tx := db.Begin()
+	var needRestart0, needRestart1, needRestart2 bool
+	var count int64
 
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		} else {
-			tx.Commit()
-		}
-	}()
+	writeErr := database.WithWrite(func() error {
+		db := database.GetDB()
+		tx := db.Begin()
+
+		defer func() {
+			if err != nil {
+				tx.Rollback()
+			} else {
+				tx.Commit()
+			}
+		}()
 	err = s.addInboundTraffic(tx, inboundTraffics)
 	if err != nil {
-		return err, false
+		return err
 	}
 	err = s.addClientTraffic(tx, clientTraffics)
 	if err != nil {
-		return err, false
+		return err
 	}
 
-	needRestart0, count, err := s.autoRenewClients(tx)
+	needRestart0, count, err = s.autoRenewClients(tx)
 	if err != nil {
 		logger.Warning("Error in renew clients:", err)
 	} else if count > 0 {
 		logger.Debugf("%v clients renewed", count)
 	}
 
-	needRestart1, count, err := s.disableInvalidClients(tx)
+	needRestart1, count, err = s.disableInvalidClients(tx)
 	if err != nil {
 		logger.Warning("Error in disabling invalid clients:", err)
 	} else if count > 0 {
 		logger.Debugf("%v clients disabled", count)
 	}
 
-	needRestart2, count, err := s.disableInvalidInbounds(tx)
+	needRestart2, count, err = s.disableInvalidInbounds(tx)
 	if err != nil {
 		logger.Warning("Error in disabling invalid inbounds:", err)
 	} else if count > 0 {
 		logger.Debugf("%v inbounds disabled", count)
+	}
+	return nil
+	}) // end WithWrite
+
+	if writeErr != nil {
+		return writeErr, false
 	}
 	return nil, (needRestart0 || needRestart1 || needRestart2)
 }

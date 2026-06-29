@@ -259,7 +259,7 @@ func (s *Server) startTask() {
 	s.cron.AddJob("@every 30s", job.NewCheckXrayRunningJob())
 
 	// Automatic DB backup every hour, keep last 24
-	s.cron.AddJob("@every 3600s", job.NewAutoBackupJob())
+	s.cron.AddJob("@every 1800s", job.NewAutoBackupJob())
 
 	// Check if xray needs to be restarted
 	s.cron.AddFunc("@every 10s", func() {

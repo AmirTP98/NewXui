@@ -13,7 +13,7 @@ import (
 	"github.com/alireza0/x-ui/logger"
 )
 
-const maxBackups = 24
+const maxBackups = 48
 
 type AutoBackupJob struct{}
 
