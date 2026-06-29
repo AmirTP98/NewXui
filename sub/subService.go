@@ -157,15 +157,19 @@ func (s *SubService) GetSubs(subId string, host string) ([]string, string, error
 				if client.SubID != subId || !client.Enable {
 					continue
 				}
+				sc := client
+				if loc.Type == "reality" && sc.Flow == "" {
+					sc.Flow = "xtls-rprx-vision"
+				}
 				// Build a temporary inbound with location config + master client
 				tmpInbound := *locInbound
 				tmpSettings := map[string]interface{}{}
 				json.Unmarshal([]byte(tmpInbound.Settings), &tmpSettings)
-				tmpSettings["clients"] = []model.Client{client}
+				tmpSettings["clients"] = []model.Client{sc}
 				newSettings, _ := json.Marshal(tmpSettings)
 				tmpInbound.Settings = string(newSettings)
 
-				link := s.getLink(&tmpInbound, client.Email)
+				link := s.getLink(&tmpInbound, sc.Email)
 				for _, singleLink := range strings.Split(link, "\n") {
 					if trimmed := strings.TrimSpace(singleLink); trimmed != "" {
 						result = append(result, trimmed)
