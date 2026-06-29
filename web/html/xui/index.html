@@ -134,8 +134,7 @@
                             <a-tag color="purple" style="cursor: pointer; margin-right: 3px;" @click="openLogs()">{{ i18n "pages.index.logs" }}</a-tag>
                             <a-tag color="purple" style="cursor: pointer; margin-right: 3px;" @click="openConfig">{{ i18n "pages.index.config" }}</a-tag>
                             <a-tag color="purple" style="cursor: pointer; margin-right: 3px;" @click="openBackup">{{ i18n "pages.index.backup" }}</a-tag>
-                            <a-tag :color="dbHealth.color" style="cursor: pointer; margin-right: 3px;" @click="checkDbHealth">[[ dbHealth.text ]]</a-tag>
-                            <a-tag color="cyan" style="cursor: pointer;" @click="refreshSync">Sync: [[ syncText ]]</a-tag>
+                            <a-tag :color="dbHealth.color" style="cursor: pointer;" @click="checkDbHealth">[[ dbHealth.text ]]</a-tag>
                         </a-card>
                     </a-col>
                     <a-col :sm="24" :md="12">
