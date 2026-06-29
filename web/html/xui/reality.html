@@ -51,6 +51,10 @@
                             <template slot="master" slot-scope="text, item">
                                 [[ masterLabel(item.masterInboundId) ]]
                             </template>
+                            <template slot="remark" slot-scope="text, item">
+                                <a-input size="small" v-model="item.remark" @blur="saveRemark(item)"
+                                         style="min-width:100px"></a-input>
+                            </template>
                             <template slot="inbound" slot-scope="text, item">
                                 [[ inboundLabel(item.inboundId) ]]
                             </template>
@@ -106,7 +110,7 @@
             sniffingTemplate: DEFAULT_SNIFFING,
             results: [],
             columns: [
-                { title: 'Remark', dataIndex: 'remark', key: 'remark' },
+                { title: 'Remark', key: 'remark', scopedSlots: { customRender: 'remark' } },
                 { title: 'Master', key: 'master', scopedSlots: { customRender: 'master' } },
                 { title: 'Reality Inbound', key: 'inbound', scopedSlots: { customRender: 'inbound' } },
                 { title: 'Enable', key: 'enable', width: 80, scopedSlots: { customRender: 'enable' } },
@@ -155,6 +159,9 @@
                     this.results = msg.obj || [];
                     await this.getRealities();
                 }
+            },
+            async saveRemark(item) {
+                await HttpUtil.post('/xui/API/locations/update/' + item.id, item);
             },
             async toggleEnable(item) {
                 item.enable = !item.enable;
