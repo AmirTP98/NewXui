@@ -52,7 +52,8 @@ type AllSetting struct {
 	SubJsonFragment  string `json:"subJsonFragment" form:"subJsonFragment"`
 	SubJsonNoises    string `json:"subJsonNoises" form:"subJsonNoises"`
 	SubJsonMux       string `json:"subJsonMux" form:"subJsonMux"`
-	SubJsonRules     string `json:"subJsonRules" form:"subJsonRules"`
+	SubJsonRules       string `json:"subJsonRules" form:"subJsonRules"`
+	MirrorTrafficMode  string `json:"mirrorTrafficMode" form:"mirrorTrafficMode"`
 }
 
 func (s *AllSetting) CheckValid() error {

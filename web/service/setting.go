@@ -67,6 +67,10 @@ var defaultValueMap = map[string]string{
 	"locationMasterInboundId":    "0",
 	"locationMasterInboundIds":   "",
 	"locationSyncIntervalSec":    "30",
+
+	// "inline" = current behaviour (mirror traffic added to master in main DB)
+	// "external" = mirror traffic written to /etc/x-ui/mirrors.db instead
+	"mirrorTrafficMode": "inline",
 }
 
 type SettingService struct{}
@@ -205,6 +209,15 @@ func (s *SettingService) getBool(key string) (bool, error) {
 
 func (s *SettingService) setBool(key string, value bool) error {
 	return s.setString(key, strconv.FormatBool(value))
+}
+
+// GetMirrorTrafficMode returns "inline" (default) or "external".
+func (s *SettingService) GetMirrorTrafficMode() string {
+	mode, err := s.getString("mirrorTrafficMode")
+	if err != nil || mode == "" {
+		return "inline"
+	}
+	return mode
 }
 
 func (s *SettingService) getInt(key string) (int, error) {

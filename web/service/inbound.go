@@ -872,13 +872,25 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 	var onlineClients []string
 
 	// Mirror traffic attribution: accumulate every 10s, flush to master every 10 min.
-	// Between flushes, deltas are held in pendingAttribution so nothing is lost.
+	// In "inline" mode the deltas are added to master client_traffics in the main DB.
+	// In "external" mode the deltas are written to mirrors.db instead.
 	locSvc := LocationService{}
 	suffixes := locSvc.LocationSuffixes()
 	doFlush := len(suffixes) > 0 && time.Since(lastAttributionRun) >= attributionInterval
 	if doFlush {
 		lastAttributionRun = time.Now()
 	}
+
+	// Read mode once before taking the lock (avoids a DB call inside a mutex).
+	var isExternalMode bool
+	if len(suffixes) > 0 {
+		isExternalMode = (&SettingService{}).GetMirrorTrafficMode() == "external"
+	}
+
+	// snapshotForExternal holds the flush snapshot when external mode is active.
+	// It is populated inside the lock and written to mirrors.db after the lock is released.
+	var snapshotForExternal map[string][2]int64
+
 	if len(suffixes) > 0 {
 		var filtered []*xray.ClientTraffic
 		pendingAttributionMu.Lock()
@@ -901,29 +913,41 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 		}
 		traffics = filtered
 
-		// On flush tick, inject accumulated mirror deltas into master traffics
 		if doFlush && len(pendingAttribution) > 0 {
-			for masterEmail, acc := range pendingAttribution {
-				found := false
-				for _, t := range traffics {
-					if t.Email == masterEmail {
-						t.Up += acc[0]
-						t.Down += acc[1]
-						found = true
-						break
+			if isExternalMode {
+				// Snapshot the map for writing to mirrors.db after the lock is released.
+				snapshotForExternal = pendingAttribution
+			} else {
+				// Inline mode: inject accumulated deltas into master traffics list.
+				for masterEmail, acc := range pendingAttribution {
+					found := false
+					for _, t := range traffics {
+						if t.Email == masterEmail {
+							t.Up += acc[0]
+							t.Down += acc[1]
+							found = true
+							break
+						}
 					}
-				}
-				if !found {
-					traffics = append(traffics, &xray.ClientTraffic{
-						Email: masterEmail,
-						Up:    acc[0],
-						Down:  acc[1],
-					})
+					if !found {
+						traffics = append(traffics, &xray.ClientTraffic{
+							Email: masterEmail,
+							Up:    acc[0],
+							Down:  acc[1],
+						})
+					}
 				}
 			}
 			pendingAttribution = make(map[string][2]int64)
 		}
 		pendingAttributionMu.Unlock()
+	}
+
+	// Write mirror deltas to mirrors.db outside the in-memory lock.
+	if len(snapshotForExternal) > 0 {
+		if err2 := database.BatchUpsertMirrorTraffic(snapshotForExternal); err2 != nil {
+			logger.Warning("BatchUpsertMirrorTraffic:", err2)
+		}
 	}
 
 	emails := make([]string, 0, len(traffics))
@@ -1203,14 +1227,17 @@ func (s *InboundService) disableInvalidInbounds(tx *gorm.DB) (bool, int64, error
 
 func (s *InboundService) disableInvalidClients(tx *gorm.DB) (bool, int64, error) {
 	now := time.Now().Unix() * 1000
-	needRestart := false
 
+	if (&SettingService{}).GetMirrorTrafficMode() == "external" {
+		return s.disableInvalidClientsExternal(tx, now)
+	}
+
+	// --- inline mode (original behaviour) ---
 	if p != nil {
 		var results []struct {
 			Tag   string
 			Email string
 		}
-
 		err := tx.Table("inbounds").
 			Select("inbounds.tag, client_traffics.email").
 			Joins("JOIN client_traffics ON inbounds.id = client_traffics.inbound_id").
@@ -1238,9 +1265,110 @@ func (s *InboundService) disableInvalidClients(tx *gorm.DB) (bool, int64, error)
 	result := tx.Model(xray.ClientTraffic{}).
 		Where("((total > 0 and up + down >= total) or (expiry_time > 0 and expiry_time <= ?)) and enable = ?", now, true).
 		Update("enable", false)
-	err := result.Error
-	count := result.RowsAffected
-	return needRestart, count, err
+	return false, result.RowsAffected, result.Error
+}
+
+// disableInvalidClientsExternal handles client expiry/quota enforcement when
+// mirror traffic is stored in mirrors.db rather than the main DB. It combines
+// main-DB traffic with mirrors.db traffic for the quota check.
+func (s *InboundService) disableInvalidClientsExternal(tx *gorm.DB, now int64) (bool, int64, error) {
+	var totalDisabled int64
+
+	// --- 1. Expiry-based disable (no mirror traffic involved) ---
+	type tagEmail struct {
+		Tag   string
+		Email string
+	}
+
+	var expiredRows []tagEmail
+	if p != nil {
+		tx.Table("inbounds").
+			Select("inbounds.tag, client_traffics.email").
+			Joins("JOIN client_traffics ON inbounds.id = client_traffics.inbound_id").
+			Where("client_traffics.expiry_time > 0 AND client_traffics.expiry_time <= ? AND client_traffics.enable = ?", now, true).
+			Scan(&expiredRows)
+	}
+
+	res := tx.Model(xray.ClientTraffic{}).
+		Where("expiry_time > 0 AND expiry_time <= ? AND enable = ?", now, true).
+		Update("enable", false)
+	if res.Error != nil {
+		return false, 0, res.Error
+	}
+	totalDisabled += res.RowsAffected
+
+	// --- 2. Traffic-based disable: combine main DB + mirrors.db ---
+	mirrorMap := database.GetAllMirrorTraffic()
+
+	var clients []xray.ClientTraffic
+	if err := tx.Where("total > 0 AND enable = ?", true).Find(&clients).Error; err != nil {
+		return false, totalDisabled, err
+	}
+
+	var depletedEmails []string
+	for _, ct := range clients {
+		m := mirrorMap[ct.Email]
+		if ct.Up+ct.Down+m[0]+m[1] >= ct.Total {
+			depletedEmails = append(depletedEmails, ct.Email)
+		}
+	}
+
+	if len(depletedEmails) == 0 && len(expiredRows) == 0 {
+		return false, totalDisabled, nil
+	}
+
+	// Gather tag+email pairs for xray API removal (depleted clients).
+	var depletedRows []tagEmail
+	if p != nil && len(depletedEmails) > 0 {
+		for i := 0; i < len(depletedEmails); i += safeBatchSize {
+			end := i + safeBatchSize
+			if end > len(depletedEmails) {
+				end = len(depletedEmails)
+			}
+			var batch []tagEmail
+			tx.Table("inbounds").
+				Select("inbounds.tag, client_traffics.email").
+				Joins("JOIN client_traffics ON inbounds.id = client_traffics.inbound_id").
+				Where("client_traffics.email IN ? AND client_traffics.enable = ?", depletedEmails[i:end], true).
+				Scan(&batch)
+			depletedRows = append(depletedRows, batch...)
+		}
+	}
+
+	// Remove all to-be-disabled clients from xray in one API session.
+	allToRemove := append(expiredRows, depletedRows...)
+	if p != nil && len(allToRemove) > 0 {
+		if err1 := s.xrayApi.Init(p.GetAPIPort()); err1 != nil {
+			logger.Debug("Unable to init xray api for client disable (external):", err1)
+		} else {
+			for _, r := range allToRemove {
+				err1 := s.xrayApi.RemoveUser(r.Tag, r.Email)
+				if err1 == nil {
+					logger.Debug("Client disabled by api:", r.Email)
+				} else {
+					logger.Debug("Client disable api (will fix on next restart):", r.Email)
+				}
+			}
+			s.xrayApi.Close()
+		}
+	}
+
+	// Disable depleted clients in main DB (batched for 6000-client scale).
+	for i := 0; i < len(depletedEmails); i += safeBatchSize {
+		end := i + safeBatchSize
+		if end > len(depletedEmails) {
+			end = len(depletedEmails)
+		}
+		r := tx.Model(xray.ClientTraffic{}).
+			Where("email IN ? AND enable = ?", depletedEmails[i:end], true).
+			Update("enable", false)
+		if r.Error != nil {
+			return false, totalDisabled, r.Error
+		}
+		totalDisabled += r.RowsAffected
+	}
+
+	return false, totalDisabled, nil
 }
 
 func (s *InboundService) MigrationRemoveOrphanedTraffics() {
@@ -1350,6 +1478,13 @@ func (s *InboundService) ResetClientTraffic(id int, clientEmail string) (bool, e
 		return false, err
 	}
 
+	// Also clear any accumulated mirror traffic for this client.
+	if (&SettingService{}).GetMirrorTrafficMode() == "external" {
+		if err2 := database.ResetMirrorTraffic(clientEmail); err2 != nil {
+			logger.Warning("ResetMirrorTraffic:", err2)
+		}
+	}
+
 	return needRestart, nil
 }
 
@@ -1367,8 +1502,29 @@ func (s *InboundService) ResetAllClientTraffics(id int) error {
 		Where(whereText, id).
 		Updates(map[string]interface{}{"enable": true, "up": 0, "down": 0})
 
-	err := result.Error
-	return err
+	if err := result.Error; err != nil {
+		return err
+	}
+
+	// Reset mirror traffic for all clients in this inbound (or globally when id == -1).
+	if (&SettingService{}).GetMirrorTrafficMode() == "external" {
+		if id == -1 {
+			if err2 := database.ResetAllMirrorTraffic(); err2 != nil {
+				logger.Warning("ResetAllMirrorTraffic:", err2)
+			}
+		} else {
+			// Collect emails for this specific inbound and reset each one.
+			var emails []string
+			db.Model(xray.ClientTraffic{}).Where("inbound_id = ?", id).Pluck("email", &emails)
+			for _, email := range emails {
+				if err2 := database.ResetMirrorTraffic(email); err2 != nil {
+					logger.Warning("ResetMirrorTraffic:", err2)
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *InboundService) ResetAllTraffics() error {

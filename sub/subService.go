@@ -105,6 +105,12 @@ func (s *SubService) GetSubs(subId string, host string) ([]string, string, error
 				ct := s.getClientTraffics(inbound.ClientStats, client.Email)
 				traffic.Up += ct.Up
 				traffic.Down += ct.Down
+				// In external mirror mode, add traffic stored in mirrors.db.
+				if (&service.SettingService{}).GetMirrorTrafficMode() == "external" {
+					mUp, mDown := database.GetMirrorTraffic(client.Email)
+					traffic.Up += mUp
+					traffic.Down += mDown
+				}
 				if ct.Total == 0 {
 					unlimitedTotal = true
 				} else if !unlimitedTotal {
