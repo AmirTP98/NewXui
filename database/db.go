@@ -89,13 +89,14 @@ func InitDB(dbPath string) error {
 		return err
 	}
 
-	// Serialize all DB access through one connection (SQLite supports only 1 writer)
+	// Allow concurrent reads (WAL mode supports this) but SQLite still
+	// serializes writes internally via busy_timeout.
 	sqlDB, err := db.DB()
 	if err != nil {
 		return err
 	}
-	sqlDB.SetMaxOpenConns(1)
-	sqlDB.SetMaxIdleConns(1)
+	sqlDB.SetMaxOpenConns(4)
+	sqlDB.SetMaxIdleConns(2)
 
 	// Set pragmas AFTER opening connection
 	db.Exec("PRAGMA busy_timeout = 5000")
