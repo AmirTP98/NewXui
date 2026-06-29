@@ -5,6 +5,7 @@ import (
 	"errors"
 	"runtime"
 	"sync"
+	"time"
 
 	"github.com/alireza0/x-ui/logger"
 	"github.com/alireza0/x-ui/xray"
@@ -225,6 +226,14 @@ func (s *XrayService) RestartXray(isForce bool) error {
 	if err != nil {
 		return err
 	}
+
+	// After Xray starts, verify and repair location/reality clients via API
+	go func() {
+		time.Sleep(3 * time.Second)
+		locSvc := LocationService{}
+		locSvc.VerifyAndRepairRunningXray()
+	}()
+
 	return nil
 }
 

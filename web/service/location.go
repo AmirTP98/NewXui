@@ -429,7 +429,11 @@ func recoverLog(where string) {
 // real clients on every location inbound even though the DB stores them empty.
 func (s *LocationService) InjectLocationClients(inbounds []*model.Inbound) {
 	locs, err := s.enabledLocations()
-	if err != nil || len(locs) == 0 {
+	if err != nil {
+		logger.Warning("InjectLocationClients: failed to get locations:", err)
+		return
+	}
+	if len(locs) == 0 {
 		return
 	}
 	locMap := make(map[int]model.Location, len(locs))
@@ -506,7 +510,89 @@ func (s *LocationService) InjectLocationClients(inbounds []*model.Inbound) {
 		injected += len(locClients)
 	}
 	if injected > 0 {
-		logger.Debugf("InjectLocationClients: %d clients across %d locations", injected, len(locs))
+		logger.Infof("InjectLocationClients: %d clients across %d locations/reality mirrors", injected, len(locs))
+	} else {
+		logger.Warning("InjectLocationClients: 0 clients injected — check master inbound settings")
+	}
+}
+
+// VerifyAndRepairRunningXray checks that all location/reality inbounds have
+// their virtual clients in the running Xray instance. If any are missing
+// (e.g., after a crash or failed injection), re-adds them via gRPC API.
+// Called from a delayed goroutine after Xray starts.
+func (s *LocationService) VerifyAndRepairRunningXray() {
+	locs, err := s.enabledLocations()
+	if err != nil || len(locs) == 0 {
+		return
+	}
+
+	inboundSvc := &InboundService{}
+	masterIds := s.GetMasterInboundIds()
+	masterIdSet := make(map[int]bool, len(masterIds))
+	for _, id := range masterIds {
+		masterIdSet[id] = true
+	}
+
+	if p == nil {
+		return
+	}
+	if err := inboundSvc.xrayApi.Init(p.GetAPIPort()); err != nil {
+		return
+	}
+	defer inboundSvc.xrayApi.Close()
+
+	repaired := 0
+	for _, loc := range locs {
+		inbound, err := inboundSvc.GetInbound(loc.InboundId)
+		if err != nil || !inbound.Enable {
+			continue
+		}
+
+		var sourceClients []model.Client
+		if loc.Type == "reality" && loc.MasterInboundId > 0 {
+			master, err := inboundSvc.GetInbound(loc.MasterInboundId)
+			if err != nil {
+				continue
+			}
+			sourceClients, _ = inboundSvc.GetClients(master)
+		} else {
+			for _, mid := range masterIds {
+				master, err := inboundSvc.GetInbound(mid)
+				if err != nil {
+					continue
+				}
+				clients, _ := inboundSvc.GetClients(master)
+				sourceClients = append(sourceClients, clients...)
+			}
+		}
+
+		isReality := loc.Type == "reality"
+		var settings map[string]interface{}
+		json.Unmarshal([]byte(inbound.Settings), &settings)
+		cipher := ""
+		if inbound.Protocol == "shadowsocks" {
+			if m, ok := settings["method"].(string); ok {
+				cipher = m
+			}
+		}
+
+		for _, mc := range sourceClients {
+			sc := locationSuffixedClient(mc, loc)
+			if !sc.Enable {
+				continue
+			}
+			if isReality && sc.Flow == "" {
+				sc.Flow = "xtls-rprx-vision"
+			}
+			inboundSvc.xrayApi.AddUser(string(inbound.Protocol), inbound.Tag, map[string]interface{}{
+				"email": sc.Email, "id": sc.ID, "flow": sc.Flow,
+				"password": sc.Password, "cipher": cipher,
+			})
+			repaired++
+		}
+	}
+	if repaired > 0 {
+		logger.Infof("VerifyAndRepairRunningXray: ensured %d clients across %d locations", repaired, len(locs))
 	}
 }
 
