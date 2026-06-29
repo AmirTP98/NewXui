@@ -9,7 +9,6 @@ import (
 
 	"github.com/alireza0/x-ui/database"
 	"github.com/alireza0/x-ui/database/model"
-	"github.com/alireza0/x-ui/logger"
 	"github.com/alireza0/x-ui/util/common"
 	"github.com/alireza0/x-ui/util/random"
 	"github.com/alireza0/x-ui/web/service"
@@ -61,19 +60,24 @@ func (s *SubService) GetSubs(subId string, host string) ([]string, string, error
 	var result []string
 	var header string
 	var traffic xray.ClientTraffic
-	unlimitedTotal := false // true if any inbound has Total==0 (unlimited)
+	unlimitedTotal := false
 	inbounds, err := s.getInboundsBySubId(subId)
 	if err != nil {
 		return nil, "", err
 	}
 
-	// Prepare Inbounds
+	// Collect matching clients per master inbound for mirror link generation
+	type matchedClient struct {
+		client model.Client
+		inbound *model.Inbound
+	}
+	var matchedClients []matchedClient
+
+	// --- Pass 1: collect master links + traffic + matched clients ---
+	var masterLinks []string
 	for _, inbound := range inbounds {
 		clients, err := s.inboundService.GetClients(inbound)
-		if err != nil {
-			logger.Error("SubService - GetClients: Unable to get clients from inbound")
-		}
-		if clients == nil {
+		if err != nil || clients == nil {
 			continue
 		}
 		if len(inbound.Listen) > 0 && inbound.Listen[0] == '@' {
@@ -84,29 +88,19 @@ func (s *SubService) GetSubs(subId string, host string) ([]string, string, error
 				inbound.StreamSettings = streamSettings
 			}
 		}
-
-		// Collect proxy links for clients matching this subId.
-		// Traffic is accumulated regardless of enable state so the sub page always
-		// shows up-to-date quota/expiry even for disabled services.
-		// VPN links are only included for enabled clients (disabled ones can't connect anyway).
 		for _, client := range clients {
 			if client.SubID != subId {
 				continue
 			}
 			if client.Enable {
 				link := s.getLink(inbound, client.Email)
-				// externalProxy returns newline-separated links as one string — split them
 				for _, singleLink := range strings.Split(link, "\n") {
 					if trimmed := strings.TrimSpace(singleLink); trimmed != "" {
-						result = append(result, trimmed)
+						masterLinks = append(masterLinks, trimmed)
 					}
 				}
+				matchedClients = append(matchedClients, matchedClient{client: client, inbound: inbound})
 			}
-
-			// Accumulate traffic only from master (non-location) inbounds.
-			// Location inbounds mirror the master's clients and their traffic is
-			// already synced back to the master client, so counting them here would
-			// multiply the quota by the number of locations.
 			if _, isLocation := s.locByInbound[inbound.Id]; !isLocation {
 				ct := s.getClientTraffics(inbound.ClientStats, client.Email)
 				traffic.Up += ct.Up
@@ -125,43 +119,33 @@ func (s *SubService) GetSubs(subId string, host string) ([]string, string, error
 		}
 	}
 
-	// Generate location links: for every enabled location, build links using
-	// the location inbound's infrastructure (port/stream) + each matching
-	// master client's credentials. Location inbounds have no clients in the
-	// DB — they are virtual.
-	for locInboundId, loc := range s.locByInbound {
-		if !loc.Enable {
-			continue
-		}
-		locInbound, err := s.inboundService.GetInbound(locInboundId)
-		if err != nil || !locInbound.Enable {
-			continue
-		}
-		if len(locInbound.Listen) > 0 && locInbound.Listen[0] == '@' {
-			listen, port, streamSettings, err := s.getFallbackMaster(locInbound.Listen, locInbound.StreamSettings)
-			if err == nil {
-				locInbound.Listen = listen
-				locInbound.Port = port
-				locInbound.StreamSettings = streamSettings
-			}
-		}
-		for _, inbound := range inbounds {
-			if _, isLoc := s.locByInbound[inbound.Id]; isLoc {
+	// --- Pass 2: generate mirror links (reality first, then locations) ---
+	for _, pass := range []string{"reality", "location"} {
+		for locInboundId, loc := range s.locByInbound {
+			if !loc.Enable || loc.Type != pass {
 				continue
 			}
-			clients, err := s.inboundService.GetClients(inbound)
-			if err != nil {
+			locInbound, err := s.inboundService.GetInbound(locInboundId)
+			if err != nil || !locInbound.Enable {
 				continue
 			}
-			for _, client := range clients {
-				if client.SubID != subId || !client.Enable {
+			if len(locInbound.Listen) > 0 && locInbound.Listen[0] == '@' {
+				listen, port, streamSettings, err := s.getFallbackMaster(locInbound.Listen, locInbound.StreamSettings)
+				if err == nil {
+					locInbound.Listen = listen
+					locInbound.Port = port
+					locInbound.StreamSettings = streamSettings
+				}
+			}
+			for _, mc := range matchedClients {
+				// Reality mirrors: only include clients from their specific master
+				if loc.Type == "reality" && loc.MasterInboundId > 0 && mc.inbound.Id != loc.MasterInboundId {
 					continue
 				}
-				sc := client
+				sc := mc.client
 				if loc.Type == "reality" && sc.Flow == "" {
 					sc.Flow = "xtls-rprx-vision"
 				}
-				// Build a temporary inbound with location config + master client
 				tmpInbound := *locInbound
 				tmpSettings := map[string]interface{}{}
 				json.Unmarshal([]byte(tmpInbound.Settings), &tmpSettings)
@@ -178,6 +162,9 @@ func (s *SubService) GetSubs(subId string, host string) ([]string, string, error
 			}
 		}
 	}
+
+	// --- Pass 3: append master links after mirrors ---
+	result = append(result, masterLinks...)
 
 	totalForHeader := traffic.Total
 	if unlimitedTotal {
