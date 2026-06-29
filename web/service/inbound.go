@@ -23,6 +23,8 @@ const (
 	safeBatchSize = 500
 )
 
+var lastAttributionRun time.Time
+
 func (s *InboundService) GetInbounds(userId int) ([]*model.Inbound, error) {
 	db := database.GetDB()
 	var inbounds []*model.Inbound
@@ -849,40 +851,49 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 
 	var onlineClients []string
 
-	// Attribute location-suffixed traffic to master clients: strip the
-	// location suffix and merge the counters so the master's quota reflects
-	// total usage across all locations. Location-only emails are dropped
-	// from the slice (they have no client_traffics rows).
+	// Attribute location/reality-suffixed traffic to master clients every
+	// 10 minutes. Between attribution ticks, suffixed emails are simply
+	// dropped (they have no client_traffics rows). Master-only traffic
+	// is always processed every 3s.
 	locSvc := LocationService{}
 	suffixes := locSvc.LocationSuffixes()
+	doAttribution := len(suffixes) > 0 && time.Since(lastAttributionRun) >= 10*time.Minute
+	if doAttribution {
+		lastAttributionRun = time.Now()
+	}
 	if len(suffixes) > 0 {
-		merged := make(map[string]*xray.ClientTraffic, len(traffics))
-		var masterTraffics []*xray.ClientTraffic
+		var filtered []*xray.ClientTraffic
 		for _, t := range traffics {
-			masterEmail := t.Email
-			isLocation := false
+			isSuffixed := false
 			for _, suf := range suffixes {
 				if strings.HasSuffix(t.Email, suf) {
-					masterEmail = strings.TrimSuffix(t.Email, suf)
-					isLocation = true
+					isSuffixed = true
+					if doAttribution {
+						masterEmail := strings.TrimSuffix(t.Email, suf)
+						// Find or create master entry
+						found := false
+						for _, f := range filtered {
+							if f.Email == masterEmail {
+								f.Up += t.Up
+								f.Down += t.Down
+								found = true
+								break
+							}
+						}
+						if !found {
+							clone := *t
+							clone.Email = masterEmail
+							filtered = append(filtered, &clone)
+						}
+					}
 					break
 				}
 			}
-			if existing, ok := merged[masterEmail]; ok {
-				existing.Up += t.Up
-				existing.Down += t.Down
-			} else {
-				clone := *t
-				clone.Email = masterEmail
-				merged[masterEmail] = &clone
-				if !isLocation {
-					masterTraffics = append(masterTraffics, &clone)
-				} else {
-					masterTraffics = append(masterTraffics, &clone)
-				}
+			if !isSuffixed {
+				filtered = append(filtered, t)
 			}
 		}
-		traffics = masterTraffics
+		traffics = filtered
 	}
 
 	emails := make([]string, 0, len(traffics))
