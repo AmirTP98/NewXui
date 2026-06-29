@@ -82,19 +82,7 @@
 {{template "js" .}}
 {{template "component/themeSwitcher" .}}
 <script>
-    const DEFAULT_STREAM = JSON.stringify({
-        "network": "tcp",
-        "security": "reality",
-        "externalProxy": [],
-        "realitySettings": {
-            "show": false, "xver": 0, "dest": "soft98.ir:443",
-            "serverNames": ["soft98.ir"],
-            "privateKey": "",
-            "shortIds": [""],
-            "settings": { "publicKey": "", "fingerprint": "chrome", "serverName": "", "spiderX": "/" }
-        },
-        "tcpSettings": { "acceptProxyProtocol": false, "header": { "type": "none" } }
-    }, null, 2);
+    const DEFAULT_STREAM = '';
 
     const DEFAULT_SNIFFING = JSON.stringify({
         "enabled": false,

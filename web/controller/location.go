@@ -154,6 +154,20 @@ func (a *LocationController) generateReality(c *gin.Context) {
 		return
 	}
 
+	// Validate: stream must contain a non-empty privateKey
+	var streamCheck map[string]interface{}
+	json.Unmarshal([]byte(streamSettings), &streamCheck)
+	if rs, ok := streamCheck["realitySettings"].(map[string]interface{}); ok {
+		pk, _ := rs["privateKey"].(string)
+		if pk == "" {
+			jsonMsg(c, "generate reality", fmt.Errorf("privateKey is empty — paste your full Reality stream settings"))
+			return
+		}
+	} else {
+		jsonMsg(c, "generate reality", fmt.Errorf("realitySettings not found in stream settings JSON"))
+		return
+	}
+
 	user := session.GetLoginUser(c)
 	inboundSvc := service.InboundService{}
 	var created []map[string]interface{}
