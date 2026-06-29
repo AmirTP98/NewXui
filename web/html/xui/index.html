@@ -133,7 +133,8 @@
                             <strong>{{ i18n "menu.link" }}:</strong>
                             <a-tag color="purple" style="cursor: pointer; margin-right: 3px;" @click="openLogs()">{{ i18n "pages.index.logs" }}</a-tag>
                             <a-tag color="purple" style="cursor: pointer; margin-right: 3px;" @click="openConfig">{{ i18n "pages.index.config" }}</a-tag>
-                            <a-tag color="purple" style="cursor: pointer;" @click="openBackup">{{ i18n "pages.index.backup" }}</a-tag>
+                            <a-tag color="purple" style="cursor: pointer; margin-right: 3px;" @click="openBackup">{{ i18n "pages.index.backup" }}</a-tag>
+                            <a-tag :color="dbHealth.color" style="cursor: pointer;" @click="checkDbHealth">[[ dbHealth.text ]]</a-tag>
                         </a-card>
                     </a-col>
                     <a-col :sm="24" :md="12">
@@ -525,6 +526,7 @@
             versionModal,
             logModal,
             backupModal,
+            dbHealth: { text: 'DB Health', color: 'blue' },
             spinning: false,
             loadingTip: '{{ i18n "loading"}}',
             showAlert: false,
@@ -601,6 +603,20 @@
                     return;
                 }
                 txtModal.show('config.json', JSON.stringify(msg.obj, null, 2), 'config.json');
+            },
+            async checkDbHealth() {
+                this.dbHealth = { text: 'Checking...', color: 'blue' };
+                const msg = await HttpUtil.get('xui/API/server/dbHealth');
+                if (msg.success && msg.obj) {
+                    if (msg.obj.healthy) {
+                        this.dbHealth = { text: 'DB OK ✓', color: 'green' };
+                    } else {
+                        this.dbHealth = { text: 'DB CORRUPT ✗', color: 'red' };
+                        this.$error({ title: 'Database Problem', content: msg.obj.result });
+                    }
+                } else {
+                    this.dbHealth = { text: 'Check Failed', color: 'orange' };
+                }
             },
             openBackup() {
                 backupModal.show({

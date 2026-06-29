@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"github.com/alireza0/x-ui/database"
 	"github.com/alireza0/x-ui/web/service"
 
 	"github.com/gin-gonic/gin"
@@ -112,6 +113,7 @@ func (a *APIController) serverApi(api *gin.RouterGroup) {
 		{"POST", "/restartXrayService", a.serverController.restartXrayService},
 		{"POST", "/installXray/:version", a.serverController.installXray},
 		{"POST", "/logs/:count", a.serverController.getLogs},
+		{"GET", "/dbHealth", a.dbHealth},
 	}
 
 	for _, route := range serverRoutes {
@@ -121,4 +123,15 @@ func (a *APIController) serverApi(api *gin.RouterGroup) {
 
 func (a *APIController) createBackup(c *gin.Context) {
 	a.Tgbot.SendBackupToAdmins()
+}
+
+func (a *APIController) dbHealth(c *gin.Context) {
+	db := database.GetDB()
+	var result string
+	if err := db.Raw("PRAGMA integrity_check;").Scan(&result).Error; err != nil {
+		jsonObj(c, map[string]interface{}{"healthy": false, "error": err.Error()}, nil)
+		return
+	}
+	healthy := result == "ok"
+	jsonObj(c, map[string]interface{}{"healthy": healthy, "result": result}, nil)
 }
