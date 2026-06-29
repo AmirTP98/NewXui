@@ -104,7 +104,7 @@ func InitDB(dbPath string) error {
 	db.Exec("PRAGMA journal_mode = WAL")
 	db.Exec("PRAGMA wal_autocheckpoint = 1000")
 	db.Exec("PRAGMA synchronous = NORMAL")
-	db.Exec("PRAGMA foreign_keys = ON")
+	db.Exec("PRAGMA foreign_keys = OFF")
 
 	// Rebuild corrupted indexes at startup
 	db.Exec("REINDEX")
