@@ -160,17 +160,12 @@ func (a *InboundController) addInboundClient(c *gin.Context) {
 		return
 	}
 
-	needRestart, err := a.inboundService.AddInboundClient(data)
+	_, err = a.inboundService.AddInboundClient(data)
 	if err != nil {
 		jsonMsg(c, "Something went wrong!", err)
 		return
 	}
 	jsonMsg(c, "Client(s) added", nil)
-	if needRestart {
-		a.xrayService.SetToNeedRestart()
-	} else {
-		a.xrayService.SyncConfig()
-	}
 }
 
 func (a *InboundController) delInboundClient(c *gin.Context) {
@@ -181,17 +176,12 @@ func (a *InboundController) delInboundClient(c *gin.Context) {
 	}
 	clientId := c.Param("clientId")
 
-	needRestart, err := a.inboundService.DelInboundClient(id, clientId)
+	_, err = a.inboundService.DelInboundClient(id, clientId)
 	if err != nil {
 		jsonMsg(c, "Something went wrong!", err)
 		return
 	}
 	jsonMsg(c, "Client deleted", nil)
-	if needRestart {
-		a.xrayService.SetToNeedRestart()
-	} else {
-		a.xrayService.SyncConfig()
-	}
 }
 
 func (a *InboundController) updateInboundClient(c *gin.Context) {
@@ -204,17 +194,12 @@ func (a *InboundController) updateInboundClient(c *gin.Context) {
 		return
 	}
 
-	needRestart, err := a.inboundService.UpdateInboundClient(inbound, clientId)
+	_, err = a.inboundService.UpdateInboundClient(inbound, clientId)
 	if err != nil {
 		jsonMsg(c, "Something went wrong!", err)
 		return
 	}
 	jsonMsg(c, "Client updated", nil)
-	if needRestart {
-		a.xrayService.SetToNeedRestart()
-	} else {
-		a.xrayService.SyncConfig()
-	}
 }
 
 func (a *InboundController) resetClientTraffic(c *gin.Context) {
