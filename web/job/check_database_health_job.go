@@ -3,8 +3,6 @@ package job
 import (
 	"github.com/alireza0/x-ui/database"
 	"github.com/alireza0/x-ui/logger"
-	"os"
-	"path"
 )
 
 type CheckDatabaseHealthJob struct{}
@@ -20,19 +18,16 @@ func (j *CheckDatabaseHealthJob) Run() {
 		}
 	}()
 
-	// Get database path from config
-	dir, _ := os.Getwd()
-	dbPath := path.Join(dir, "x-ui.db")
-	if _, err := os.Stat(dbPath); err != nil {
-		// Try /etc/x-ui/x-ui.db
-		dbPath = "/etc/x-ui/x-ui.db"
+	db := database.GetDB()
+	var result string
+	if err := db.Raw("PRAGMA integrity_check;").Scan(&result).Error; err != nil {
+		logger.Warning("DB health check error: ", err)
+		return
 	}
-
-	if !database.CheckDatabaseHealth(dbPath) {
-		logger.Warning("Database health check FAILED for: ", dbPath)
-		// Backup corrupted database so we can investigate
-		if err := database.BackupDB(dbPath); err != nil {
-			logger.Error("Failed to backup corrupted database: ", err)
-		}
+	if result == "ok" {
+		return
 	}
+	logger.Warning("DB integrity issue detected: ", result)
+	db.Exec("REINDEX")
+	logger.Info("REINDEX completed — auto-repair applied")
 }

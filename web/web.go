@@ -260,7 +260,7 @@ func (s *Server) startTask() {
 	s.cron.AddJob("@every 30s", job.NewCheckXrayRunningJob())
 
 	// Database health check every 30 minutes (corruption early detection)
-	s.cron.AddJob("@every 1800s", job.NewCheckDatabaseHealthJob())
+	s.cron.AddJob("@every 60s", job.NewCheckDatabaseHealthJob())
 
 	// Check if xray needs to be restarted
 	s.cron.AddFunc("@every 10s", func() {
