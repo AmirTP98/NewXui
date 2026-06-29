@@ -273,9 +273,8 @@ func (s *Server) startTask() {
 
 	go func() {
 		time.Sleep(time.Second * 5)
-		// Pull Xray traffic stats every 3s (was 10s) so inbound counters - and the
-		// per-location live-traffic display - refresh quickly. Start delayed 5s.
-		s.cron.AddJob("@every 3s", job.NewXrayTrafficJob())
+		// Pull Xray traffic stats every 10s. Gives API calls time between writes.
+		s.cron.AddJob("@every 10s", job.NewXrayTrafficJob())
 	}()
 
 	// Make a traffic condition every day, 8:30

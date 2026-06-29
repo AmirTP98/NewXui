@@ -100,10 +100,10 @@ func InitDB(dbPath string) error {
 	sqlDB.SetMaxIdleConns(2)
 
 	// Set pragmas AFTER opening connection
-	db.Exec("PRAGMA busy_timeout = 30000")
+	db.Exec("PRAGMA busy_timeout = 60000")
 	db.Exec("PRAGMA journal_mode = WAL")
 	db.Exec("PRAGMA wal_autocheckpoint = 1000")
-	db.Exec("PRAGMA synchronous = FULL")
+	db.Exec("PRAGMA synchronous = NORMAL")
 	db.Exec("PRAGMA foreign_keys = OFF")
 
 	// Rebuild corrupted indexes at startup
