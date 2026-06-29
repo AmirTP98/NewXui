@@ -89,14 +89,14 @@ func InitDB(dbPath string) error {
 		return err
 	}
 
-	// 2 connections: one for the active writer, one for concurrent reads.
-	// More than 2 causes index corruption under heavy write contention.
+	// Single connection: safest for SQLite — eliminates all corruption risk
+	// from concurrent access. Reads queue behind writes but no data loss.
 	sqlDB, err := db.DB()
 	if err != nil {
 		return err
 	}
-	sqlDB.SetMaxOpenConns(2)
-	sqlDB.SetMaxIdleConns(2)
+	sqlDB.SetMaxOpenConns(1)
+	sqlDB.SetMaxIdleConns(1)
 
 	// Set pragmas AFTER opening connection
 	db.Exec("PRAGMA busy_timeout = 5000")
