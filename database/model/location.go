@@ -5,14 +5,15 @@ package model
 // mirrored onto every location inbound (with a per-location email suffix), and
 // their traffic is summed back onto the master client.
 type Location struct {
-	Id        int    `json:"id" form:"id" gorm:"primaryKey;autoIncrement"`
-	Type      string `json:"type" form:"type" gorm:"default:'location'"` // "location" or "reality"
-	Country   string `json:"country" form:"country"`                     // ISO 2-letter code, e.g. "DE"
-	Flag      string `json:"flag" form:"flag"`                           // emoji flag, e.g. "🇩🇪"
-	Remark    string `json:"remark" form:"remark"`                       // label + email suffix
-	Domain    string `json:"domain" form:"domain"`                       // optional; used in sub links instead of the server IP
-	InboundId int    `json:"inboundId" form:"inboundId"`                 // the local inbound for this location
-	Enable    bool   `json:"enable" form:"enable"`
+	Id              int    `json:"id" form:"id" gorm:"primaryKey;autoIncrement"`
+	Type            string `json:"type" form:"type" gorm:"default:'location'"` // "location" or "reality"
+	Country         string `json:"country" form:"country"`
+	Flag            string `json:"flag" form:"flag"`
+	Remark          string `json:"remark" form:"remark"`
+	Domain          string `json:"domain" form:"domain"`
+	InboundId       int    `json:"inboundId" form:"inboundId"`
+	MasterInboundId int    `json:"masterInboundId" form:"masterInboundId"` // reality: linked to one specific master
+	Enable          bool   `json:"enable" form:"enable"`
 }
 
 // LocationTrafficSnapshot stores the last-seen traffic counters for a

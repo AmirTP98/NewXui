@@ -438,46 +438,59 @@ func (s *LocationService) InjectLocationClients(inbounds []*model.Inbound) {
 	}
 
 	masterIds := s.GetMasterInboundIds()
-	if len(masterIds) == 0 {
-		return
-	}
 	masterIdSet := make(map[int]bool, len(masterIds))
 	for _, id := range masterIds {
 		masterIdSet[id] = true
 	}
 
-	// Collect all master clients
+	// Build inbound-by-id map for quick lookups
 	inboundSvc := &InboundService{}
-	var allMasterClients []model.Client
-	for _, inbound := range inbounds {
-		if !masterIdSet[inbound.Id] {
-			continue
-		}
-		clients, err := inboundSvc.GetClients(inbound)
-		if err != nil {
-			continue
-		}
-		allMasterClients = append(allMasterClients, clients...)
-	}
-	if len(allMasterClients) == 0 {
-		return
+	inboundById := make(map[int]*model.Inbound, len(inbounds))
+	for _, ib := range inbounds {
+		inboundById[ib.Id] = ib
 	}
 
-	// Inject into each location inbound
+	// Collect master clients: shared masters (for locations) + per-record (for reality)
+	sharedMasterClients := make([]model.Client, 0)
+	for _, inbound := range inbounds {
+		if masterIdSet[inbound.Id] {
+			if clients, err := inboundSvc.GetClients(inbound); err == nil {
+				sharedMasterClients = append(sharedMasterClients, clients...)
+			}
+		}
+	}
+
+	// Inject into each location/reality inbound
 	injected := 0
 	for _, inbound := range inbounds {
 		loc, isLocation := locMap[inbound.Id]
 		if !isLocation {
 			continue
 		}
+
+		// Determine which master clients to use
+		var sourceClients []model.Client
+		if loc.Type == "reality" && loc.MasterInboundId > 0 {
+			if master, ok := inboundById[loc.MasterInboundId]; ok {
+				if clients, err := inboundSvc.GetClients(master); err == nil {
+					sourceClients = clients
+				}
+			}
+		} else {
+			sourceClients = sharedMasterClients
+		}
+		if len(sourceClients) == 0 {
+			continue
+		}
+
 		var settings map[string]interface{}
 		json.Unmarshal([]byte(inbound.Settings), &settings)
 		if settings == nil {
 			settings = map[string]interface{}{}
 		}
 		isReality := loc.Type == "reality"
-		locClients := make([]model.Client, 0, len(allMasterClients))
-		for _, mc := range allMasterClients {
+		locClients := make([]model.Client, 0, len(sourceClients))
+		for _, mc := range sourceClients {
 			sc := locationSuffixedClient(mc, loc)
 			if isReality && sc.Flow == "" {
 				sc.Flow = "xtls-rprx-vision"

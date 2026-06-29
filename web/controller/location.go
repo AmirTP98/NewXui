@@ -1,11 +1,13 @@
 package controller
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/alireza0/x-ui/database/model"
+	"github.com/alireza0/x-ui/util/random"
 	"github.com/alireza0/x-ui/web/service"
 	"github.com/alireza0/x-ui/web/session"
 
@@ -124,6 +126,117 @@ func (a *LocationController) setMaster(c *gin.Context) {
 	}
 	err := a.locationService.SetMasterInboundIds(ids)
 	jsonMsg(c, "set master inbounds", err)
+}
+
+// generateReality creates one Reality inbound per selected master inbound,
+// using the provided stream/sniffing template. Each gets a unique random port.
+func (a *LocationController) generateReality(c *gin.Context) {
+	streamSettings := c.PostForm("streamSettings")
+	sniffing := c.PostForm("sniffing")
+	remarkPrefix := c.PostForm("remarkPrefix")
+	if remarkPrefix == "" {
+		remarkPrefix = "reality"
+	}
+
+	// Get master inbound IDs
+	raw := c.PostFormArray("masterIds")
+	if len(raw) == 1 {
+		raw = strings.Split(raw[0], ",")
+	}
+	var masterIds []int
+	for _, r := range raw {
+		if n, err := strconv.Atoi(strings.TrimSpace(r)); err == nil && n != 0 {
+			masterIds = append(masterIds, n)
+		}
+	}
+	if len(masterIds) == 0 {
+		jsonMsg(c, "generate reality", fmt.Errorf("no master inbounds selected"))
+		return
+	}
+
+	user := session.GetLoginUser(c)
+	inboundSvc := service.InboundService{}
+	var created []map[string]interface{}
+
+	// Check which masters already have a reality mirror
+	existing, _ := a.locationService.GetLocationsByType("reality")
+	existingMasters := make(map[int]bool)
+	for _, loc := range existing {
+		existingMasters[loc.MasterInboundId] = true
+	}
+
+	for i, masterId := range masterIds {
+		if existingMasters[masterId] {
+			continue // skip — already has a reality mirror
+		}
+
+		master, err := inboundSvc.GetInbound(masterId)
+		if err != nil {
+			continue
+		}
+
+		// Generate unique port (random 10000-59999)
+		port := 10000 + random.Num(50000)
+
+		// Update external proxy ports to match this inbound's port
+		finalStream := updateExternalProxyPorts(streamSettings, port)
+
+		remark := fmt.Sprintf("%s-%d", remarkPrefix, i+1)
+		tag := fmt.Sprintf("inbound-%d", port)
+
+		inbound := &model.Inbound{
+			UserId:         user.Id,
+			Enable:         true,
+			Remark:         remark + " - " + master.Remark,
+			Listen:         "",
+			Port:           port,
+			Protocol:       "vless",
+			Settings:       `{"clients":[],"decryption":"none","encryption":"none"}`,
+			StreamSettings: finalStream,
+			Sniffing:       sniffing,
+			Tag:            tag,
+		}
+
+		loc := &model.Location{
+			Type:            "reality",
+			Remark:          remark,
+			InboundId:       0,
+			MasterInboundId: masterId,
+			Enable:          true,
+		}
+
+		result, err := a.locationService.AddLocation(loc, inbound)
+		if err != nil {
+			created = append(created, map[string]interface{}{
+				"masterId": masterId, "master": master.Remark, "error": err.Error(),
+			})
+			continue
+		}
+		created = append(created, map[string]interface{}{
+			"masterId": masterId, "master": master.Remark, "port": port,
+			"realityId": result.Id, "realityInboundId": result.InboundId,
+		})
+	}
+
+	jsonObj(c, created, nil)
+}
+
+func updateExternalProxyPorts(streamSettings string, port int) string {
+	var stream map[string]interface{}
+	if err := json.Unmarshal([]byte(streamSettings), &stream); err != nil {
+		return streamSettings
+	}
+	eps, ok := stream["externalProxy"].([]interface{})
+	if !ok {
+		return streamSettings
+	}
+	for _, ep := range eps {
+		if epMap, ok := ep.(map[string]interface{}); ok {
+			epMap["port"] = float64(port)
+		}
+	}
+	result, _ := json.Marshal(stream)
+	return string(result)
 }
 
 func (a *LocationController) getSyncInterval(c *gin.Context) {
