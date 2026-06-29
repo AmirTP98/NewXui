@@ -89,14 +89,15 @@ func InitDB(dbPath string) error {
 		return err
 	}
 
-	// Single connection: safest for SQLite — eliminates all corruption risk
-	// from concurrent access. Reads queue behind writes but no data loss.
+	// WAL mode allows concurrent readers with one writer. busy_timeout
+	// makes writers wait instead of failing. Previous corruption was from
+	// heavy integrity_check + FanOut goroutines — both now removed.
 	sqlDB, err := db.DB()
 	if err != nil {
 		return err
 	}
-	sqlDB.SetMaxOpenConns(1)
-	sqlDB.SetMaxIdleConns(1)
+	sqlDB.SetMaxOpenConns(4)
+	sqlDB.SetMaxIdleConns(4)
 
 	// Set pragmas AFTER opening connection
 	db.Exec("PRAGMA busy_timeout = 5000")
