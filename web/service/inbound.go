@@ -27,6 +27,10 @@ var lastAttributionRun time.Time
 
 const attributionInterval = 10 * time.Minute
 
+// pendingAttribution accumulates mirror traffic deltas between 10-minute ticks.
+// Key = master email, value = accumulated up/down since last flush.
+var pendingAttribution = make(map[string][2]int64)
+
 func GetNextSyncSeconds() int {
 	if lastAttributionRun.IsZero() {
 		return 0
@@ -865,14 +869,12 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 
 	var onlineClients []string
 
-	// Attribute location/reality-suffixed traffic to master clients every
-	// 10 minutes. Between attribution ticks, suffixed emails are simply
-	// dropped (they have no client_traffics rows). Master-only traffic
-	// is always processed every 3s.
+	// Mirror traffic attribution: accumulate every 3s, flush to master every 10 min.
+	// Between flushes, deltas are held in pendingAttribution so nothing is lost.
 	locSvc := LocationService{}
 	suffixes := locSvc.LocationSuffixes()
-	doAttribution := len(suffixes) > 0 && time.Since(lastAttributionRun) >= attributionInterval
-	if doAttribution {
+	doFlush := len(suffixes) > 0 && time.Since(lastAttributionRun) >= attributionInterval
+	if doFlush {
 		lastAttributionRun = time.Now()
 	}
 	if len(suffixes) > 0 {
@@ -882,24 +884,11 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 			for _, suf := range suffixes {
 				if strings.HasSuffix(t.Email, suf) {
 					isSuffixed = true
-					if doAttribution {
-						masterEmail := strings.TrimSuffix(t.Email, suf)
-						// Find or create master entry
-						found := false
-						for _, f := range filtered {
-							if f.Email == masterEmail {
-								f.Up += t.Up
-								f.Down += t.Down
-								found = true
-								break
-							}
-						}
-						if !found {
-							clone := *t
-							clone.Email = masterEmail
-							filtered = append(filtered, &clone)
-						}
-					}
+					masterEmail := strings.TrimSuffix(t.Email, suf)
+					acc := pendingAttribution[masterEmail]
+					acc[0] += t.Up
+					acc[1] += t.Down
+					pendingAttribution[masterEmail] = acc
 					break
 				}
 			}
@@ -908,6 +897,29 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 			}
 		}
 		traffics = filtered
+
+		// On flush tick, inject accumulated mirror deltas into master traffics
+		if doFlush && len(pendingAttribution) > 0 {
+			for masterEmail, acc := range pendingAttribution {
+				found := false
+				for _, t := range traffics {
+					if t.Email == masterEmail {
+						t.Up += acc[0]
+						t.Down += acc[1]
+						found = true
+						break
+					}
+				}
+				if !found {
+					traffics = append(traffics, &xray.ClientTraffic{
+						Email: masterEmail,
+						Up:    acc[0],
+						Down:  acc[1],
+					})
+				}
+			}
+			pendingAttribution = make(map[string][2]int64)
+		}
 	}
 
 	emails := make([]string, 0, len(traffics))
