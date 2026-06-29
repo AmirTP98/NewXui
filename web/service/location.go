@@ -259,10 +259,14 @@ func (s *LocationService) HotAddClientsToLocations(masterInbound *model.Inbound,
 			if err != nil || !inbound.Enable {
 				continue
 			}
+			isReality := loc.Type == "reality"
 			for _, client := range clients {
 				sc := locationSuffixedClient(client, loc)
 				if !sc.Enable {
 					continue
+				}
+				if isReality && sc.Flow == "" {
+					sc.Flow = "xtls-rprx-vision"
 				}
 				var settings map[string]interface{}
 				json.Unmarshal([]byte(inbound.Settings), &settings)
@@ -304,12 +308,16 @@ func (s *LocationService) HotUpdateClientInLocations(oldClient, newClient model.
 			if err != nil || !inbound.Enable {
 				continue
 			}
+			isReality := loc.Type == "reality"
 			oldSc := locationSuffixedClient(oldClient, loc)
 			inboundSvc.xrayApi.RemoveUser(inbound.Tag, oldSc.Email)
 
 			newSc := locationSuffixedClient(newClient, loc)
 			if !newSc.Enable {
 				continue
+			}
+			if isReality && newSc.Flow == "" {
+				newSc.Flow = "xtls-rprx-vision"
 			}
 			var settings map[string]interface{}
 			json.Unmarshal([]byte(inbound.Settings), &settings)
@@ -467,9 +475,14 @@ func (s *LocationService) InjectLocationClients(inbounds []*model.Inbound) {
 		if settings == nil {
 			settings = map[string]interface{}{}
 		}
+		isReality := loc.Type == "reality"
 		locClients := make([]model.Client, 0, len(allMasterClients))
 		for _, mc := range allMasterClients {
-			locClients = append(locClients, locationSuffixedClient(mc, loc))
+			sc := locationSuffixedClient(mc, loc)
+			if isReality && sc.Flow == "" {
+				sc.Flow = "xtls-rprx-vision"
+			}
+			locClients = append(locClients, sc)
 		}
 		settings["clients"] = locClients
 		newSettings, err := json.Marshal(settings)
