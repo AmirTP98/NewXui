@@ -25,6 +25,20 @@ const (
 
 var lastAttributionRun time.Time
 
+const attributionInterval = 10 * time.Minute
+
+func GetNextSyncSeconds() int {
+	if lastAttributionRun.IsZero() {
+		return 0
+	}
+	elapsed := time.Since(lastAttributionRun)
+	remaining := attributionInterval - elapsed
+	if remaining < 0 {
+		return 0
+	}
+	return int(remaining.Seconds())
+}
+
 func (s *InboundService) GetInbounds(userId int) ([]*model.Inbound, error) {
 	db := database.GetDB()
 	var inbounds []*model.Inbound
@@ -857,7 +871,7 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 	// is always processed every 3s.
 	locSvc := LocationService{}
 	suffixes := locSvc.LocationSuffixes()
-	doAttribution := len(suffixes) > 0 && time.Since(lastAttributionRun) >= 10*time.Minute
+	doAttribution := len(suffixes) > 0 && time.Since(lastAttributionRun) >= attributionInterval
 	if doAttribution {
 		lastAttributionRun = time.Now()
 	}

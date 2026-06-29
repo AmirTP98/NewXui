@@ -115,6 +115,7 @@ func (a *APIController) serverApi(api *gin.RouterGroup) {
 		{"POST", "/installXray/:version", a.serverController.installXray},
 		{"POST", "/logs/:count", a.serverController.getLogs},
 		{"GET", "/dbHealth", a.dbHealth},
+		{"GET", "/syncStatus", a.syncStatus},
 	}
 
 	for _, route := range serverRoutes {
@@ -124,6 +125,14 @@ func (a *APIController) serverApi(api *gin.RouterGroup) {
 
 func (a *APIController) createBackup(c *gin.Context) {
 	a.Tgbot.SendBackupToAdmins()
+}
+
+func (a *APIController) syncStatus(c *gin.Context) {
+	remaining := service.GetNextSyncSeconds()
+	jsonObj(c, map[string]interface{}{
+		"nextSyncSeconds": remaining,
+		"intervalSeconds": 600,
+	}, nil)
 }
 
 func (a *APIController) dbHealth(c *gin.Context) {

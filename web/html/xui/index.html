@@ -134,7 +134,8 @@
                             <a-tag color="purple" style="cursor: pointer; margin-right: 3px;" @click="openLogs()">{{ i18n "pages.index.logs" }}</a-tag>
                             <a-tag color="purple" style="cursor: pointer; margin-right: 3px;" @click="openConfig">{{ i18n "pages.index.config" }}</a-tag>
                             <a-tag color="purple" style="cursor: pointer; margin-right: 3px;" @click="openBackup">{{ i18n "pages.index.backup" }}</a-tag>
-                            <a-tag :color="dbHealth.color" style="cursor: pointer;" @click="checkDbHealth">[[ dbHealth.text ]]</a-tag>
+                            <a-tag :color="dbHealth.color" style="cursor: pointer; margin-right: 3px;" @click="checkDbHealth">[[ dbHealth.text ]]</a-tag>
+                            <a-tag color="cyan" style="cursor: pointer;" @click="refreshSync">Sync: [[ syncText ]]</a-tag>
                         </a-card>
                     </a-col>
                     <a-col :sm="24" :md="12">
@@ -527,11 +528,27 @@
             logModal,
             backupModal,
             dbHealth: { text: 'DB Health', color: 'blue' },
+            syncSeconds: -1,
             spinning: false,
             loadingTip: '{{ i18n "loading"}}',
             showAlert: false,
         },
+        computed: {
+            syncText() {
+                if (this.syncSeconds < 0) return '...';
+                if (this.syncSeconds === 0) return 'now';
+                const m = Math.floor(this.syncSeconds / 60);
+                const s = this.syncSeconds % 60;
+                return m > 0 ? m + 'm ' + s + 's' : s + 's';
+            },
+        },
         methods: {
+            async refreshSync() {
+                const msg = await HttpUtil.get('xui/API/server/syncStatus');
+                if (msg.success && msg.obj) {
+                    this.syncSeconds = msg.obj.nextSyncSeconds;
+                }
+            },
             loading(spinning, tip = '{{ i18n "loading"}}') {
                 this.spinning = spinning;
                 this.loadingTip = tip;
@@ -666,6 +683,9 @@
             if (window.location.protocol !== "https:") {
                 this.showAlert = true;
             }
+            this.refreshSync();
+            setInterval(() => { if (this.syncSeconds > 0) this.syncSeconds--; }, 1000);
+            setInterval(() => this.refreshSync(), 30000);
             while (true) {
                 try {
                     await this.getStatus();
