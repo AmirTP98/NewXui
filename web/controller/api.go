@@ -52,6 +52,7 @@ func (a *APIController) locationApi(api *gin.RouterGroup) {
 		{"GET", "/syncInterval", a.locationController.getSyncInterval},
 		{"POST", "/syncInterval", a.locationController.setSyncInterval},
 		{"POST", "/generateReality", a.locationController.generateReality},
+		{"POST", "/bulkRealityDest", a.locationController.bulkRealityDest},
 	}
 
 	for _, route := range routes {

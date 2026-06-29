@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/alireza0/x-ui/database"
 	"github.com/alireza0/x-ui/database/model"
 	"github.com/alireza0/x-ui/logger"
 	"github.com/alireza0/x-ui/util/random"
@@ -239,6 +240,79 @@ func (a *LocationController) generateReality(c *gin.Context) {
 	}
 
 	jsonObj(c, created, nil)
+}
+
+// bulkRealityDest changes dest and serverNames on ALL reality inbounds at once.
+func (a *LocationController) bulkRealityDest(c *gin.Context) {
+	dest := c.PostForm("dest")
+	sni := c.PostForm("sni")
+	if dest == "" || sni == "" {
+		jsonMsg(c, "bulk reality dest", fmt.Errorf("dest and sni are required"))
+		return
+	}
+
+	realities, _ := a.locationService.GetLocationsByType("reality")
+	inboundSvc := service.InboundService{}
+	updated := 0
+
+	for _, loc := range realities {
+		inbound, err := inboundSvc.GetInbound(loc.InboundId)
+		if err != nil {
+			continue
+		}
+		var stream map[string]interface{}
+		if err := json.Unmarshal([]byte(inbound.StreamSettings), &stream); err != nil {
+			continue
+		}
+		rs, ok := stream["realitySettings"].(map[string]interface{})
+		if !ok {
+			continue
+		}
+		rs["dest"] = dest
+		rs["serverNames"] = []string{sni}
+		newStream, _ := json.MarshalIndent(stream, "", "  ")
+		inbound.StreamSettings = string(newStream)
+
+		db := database.GetDB()
+		db.Model(&model.Inbound{}).Where("id = ?", inbound.Id).Update("stream_settings", inbound.StreamSettings)
+		updated++
+	}
+
+	// Also update non-mirror reality inbounds (manual ones)
+	var allInbounds []*model.Inbound
+	db := database.GetDB()
+	db.Find(&allInbounds)
+	for _, inbound := range allInbounds {
+		var stream map[string]interface{}
+		if err := json.Unmarshal([]byte(inbound.StreamSettings), &stream); err != nil {
+			continue
+		}
+		if stream["security"] != "reality" {
+			continue
+		}
+		// Skip if already updated via locations
+		alreadyDone := false
+		for _, loc := range realities {
+			if loc.InboundId == inbound.Id {
+				alreadyDone = true
+				break
+			}
+		}
+		if alreadyDone {
+			continue
+		}
+		rs, ok := stream["realitySettings"].(map[string]interface{})
+		if !ok {
+			continue
+		}
+		rs["dest"] = dest
+		rs["serverNames"] = []string{sni}
+		newStream, _ := json.MarshalIndent(stream, "", "  ")
+		db.Model(&model.Inbound{}).Where("id = ?", inbound.Id).Update("stream_settings", string(newStream))
+		updated++
+	}
+
+	jsonObj(c, updated, nil)
 }
 
 // addTagToMasterRoutingRule finds the routing rule that contains masterTag

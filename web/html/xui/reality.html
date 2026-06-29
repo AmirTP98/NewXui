@@ -45,6 +45,23 @@
                         </a-button>
                     </a-card>
 
+                    <a-card class="loc-card" hoverable title="Bulk Change Reality Dest/SNI">
+                        <a-form-model layout="inline">
+                            <a-form-model-item label="New Dest">
+                                <a-input v-model="bulkDest" placeholder="example.com:443" style="width:200px"></a-input>
+                            </a-form-model-item>
+                            <a-form-model-item label="New SNI">
+                                <a-input v-model="bulkSni" placeholder="example.com" style="width:200px"></a-input>
+                            </a-form-model-item>
+                            <a-form-model-item>
+                                <a-button type="primary" @click="bulkChangeDest" :loading="bulkLoading"
+                                          :disabled="!bulkDest || !bulkSni">
+                                    Apply to all Reality inbounds
+                                </a-button>
+                            </a-form-model-item>
+                        </a-form-model>
+                    </a-card>
+
                     <a-card class="loc-card" hoverable title='{{ i18n "pages.reality.realityList" }}'>
                         <a-table :columns="columns" :data-source="realities" :pagination="false"
                                  row-key="id" :scroll="{ x: true }" size="small">
@@ -109,6 +126,9 @@
             streamTemplate: DEFAULT_STREAM,
             sniffingTemplate: DEFAULT_SNIFFING,
             results: [],
+            bulkDest: '',
+            bulkSni: '',
+            bulkLoading: false,
             columns: [
                 { title: 'Remark', key: 'remark', scopedSlots: { customRender: 'remark' } },
                 { title: 'Master', key: 'master', scopedSlots: { customRender: 'master' } },
@@ -162,6 +182,18 @@
             },
             async saveRemark(item) {
                 await HttpUtil.post('/xui/API/locations/update/' + item.id, item);
+            },
+            async bulkChangeDest() {
+                if (!this.bulkDest || !this.bulkSni) return;
+                this.bulkLoading = true;
+                const msg = await HttpUtil.post('/xui/API/locations/bulkRealityDest', {
+                    dest: this.bulkDest,
+                    sni: this.bulkSni,
+                });
+                this.bulkLoading = false;
+                if (msg.success) {
+                    this.$success({ title: 'Done', content: 'Updated ' + (msg.obj || 0) + ' reality inbounds' });
+                }
             },
             async toggleEnable(item) {
                 item.enable = !item.enable;
