@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/alireza0/x-ui/database"
@@ -30,6 +31,7 @@ const attributionInterval = 10 * time.Minute
 // pendingAttribution accumulates mirror traffic deltas between 10-minute ticks.
 // Key = master email, value = accumulated up/down since last flush.
 var pendingAttribution = make(map[string][2]int64)
+var pendingAttributionMu sync.Mutex
 
 func GetNextSyncSeconds() int {
 	if lastAttributionRun.IsZero() {
@@ -869,7 +871,7 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 
 	var onlineClients []string
 
-	// Mirror traffic attribution: accumulate every 3s, flush to master every 10 min.
+	// Mirror traffic attribution: accumulate every 10s, flush to master every 10 min.
 	// Between flushes, deltas are held in pendingAttribution so nothing is lost.
 	locSvc := LocationService{}
 	suffixes := locSvc.LocationSuffixes()
@@ -879,6 +881,7 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 	}
 	if len(suffixes) > 0 {
 		var filtered []*xray.ClientTraffic
+		pendingAttributionMu.Lock()
 		for _, t := range traffics {
 			isSuffixed := false
 			for _, suf := range suffixes {
@@ -920,6 +923,7 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 			}
 			pendingAttribution = make(map[string][2]int64)
 		}
+		pendingAttributionMu.Unlock()
 	}
 
 	emails := make([]string, 0, len(traffics))

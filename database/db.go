@@ -88,6 +88,8 @@ func InitDB(dbPath string) error {
 		return err
 	}
 
+	db.Exec("PRAGMA journal_mode = WAL")
+	db.Exec("PRAGMA synchronous = NORMAL")
 	db.Exec("PRAGMA busy_timeout = 5000")
 	db.Exec("PRAGMA foreign_keys = OFF")
 
