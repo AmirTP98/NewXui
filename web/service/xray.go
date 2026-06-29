@@ -93,8 +93,6 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 		return nil, err
 	}
 
-	s.inboundService.AddTraffic(nil, nil)
-
 	inbounds, err := s.inboundService.GetAllInbounds()
 	if err != nil {
 		return nil, err
