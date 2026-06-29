@@ -981,10 +981,13 @@ func (s *SubService) genRemark(inbound *model.Inbound, email string, extra strin
 		name = strings.ReplaceAll(name, "{inbound}", inbound.Remark)
 	}
 
-	// For a location inbound, label the entry with the country flag + location
-	// remark, e.g. "🇹🇷turkey" (flag prefixes any external-proxy template too).
+	// For a location/reality inbound, use the location remark as template.
+	// Supports {clientname}, {email}, {inbound} variables in the remark.
 	if loc, ok := s.locByInbound[inbound.Id]; ok {
 		base := loc.Remark
+		base = strings.ReplaceAll(base, "{clientname}", email)
+		base = strings.ReplaceAll(base, "{email}", email)
+		base = strings.ReplaceAll(base, "{inbound}", inbound.Remark)
 		if extra != "" {
 			base = name
 		}
