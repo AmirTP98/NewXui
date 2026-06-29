@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/alireza0/x-ui/database/model"
+	"github.com/alireza0/x-ui/logger"
 	"github.com/alireza0/x-ui/util/random"
 	"github.com/alireza0/x-ui/web/service"
 	"github.com/alireza0/x-ui/web/session"
@@ -230,9 +231,75 @@ func (a *LocationController) generateReality(c *gin.Context) {
 			"masterId": masterId, "master": master.Remark, "port": port,
 			"realityId": result.Id, "realityInboundId": result.InboundId,
 		})
+
+		// Add reality tag to the same routing rule as master
+		if err := addTagToMasterRoutingRule(master.Tag, tag); err != nil {
+			logger.Warning("generateReality: could not add routing rule for ", tag, ": ", err)
+		}
 	}
 
 	jsonObj(c, created, nil)
+}
+
+// addTagToMasterRoutingRule finds the routing rule that contains masterTag
+// and adds newTag to the same rule, so the reality mirror gets the same outbound.
+func addTagToMasterRoutingRule(masterTag, newTag string) error {
+	settingSvc := service.SettingService{}
+	template, err := settingSvc.GetXrayConfigTemplate()
+	if err != nil {
+		return err
+	}
+	var config map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(template), &config); err != nil {
+		return err
+	}
+	routingRaw, ok := config["routing"]
+	if !ok {
+		return nil
+	}
+	var routing map[string]json.RawMessage
+	if err := json.Unmarshal(routingRaw, &routing); err != nil {
+		return err
+	}
+	rulesRaw, ok := routing["rules"]
+	if !ok {
+		return nil
+	}
+	var rules []map[string]interface{}
+	if err := json.Unmarshal(rulesRaw, &rules); err != nil {
+		return err
+	}
+
+	added := false
+	for i, rule := range rules {
+		tags, ok := rule["inboundTag"].([]interface{})
+		if !ok {
+			continue
+		}
+		for _, t := range tags {
+			if t.(string) == masterTag {
+				tags = append(tags, newTag)
+				rules[i]["inboundTag"] = tags
+				added = true
+				break
+			}
+		}
+		if added {
+			break
+		}
+	}
+	if !added {
+		return nil
+	}
+
+	newRules, _ := json.Marshal(rules)
+	routing["rules"] = newRules
+	newRouting, _ := json.Marshal(routing)
+	config["routing"] = newRouting
+	newConfig, _ := json.MarshalIndent(config, "", "  ")
+
+	xraySvc := service.XraySettingService{}
+	return xraySvc.SaveXraySetting(string(newConfig))
 }
 
 func updateExternalProxyPorts(streamSettings string, port int) string {
