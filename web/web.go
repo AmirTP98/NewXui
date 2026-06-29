@@ -260,7 +260,9 @@ func (s *Server) startTask() {
 	s.cron.AddJob("@every 30s", job.NewCheckXrayRunningJob())
 
 	// Database health check every 30 minutes (corruption early detection)
-	s.cron.AddJob("@every 600s", job.NewCheckDatabaseHealthJob())
+	// DB health check removed from cron — integrity_check locks the entire
+	// DB with MaxOpenConns(1) and hangs the panel. REINDEX at startup +
+	// manual DB Health button in dashboard are sufficient.
 
 	// Check if xray needs to be restarted
 	s.cron.AddFunc("@every 10s", func() {
