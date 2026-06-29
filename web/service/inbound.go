@@ -1082,7 +1082,6 @@ func (s *InboundService) autoRenewClients(tx *gorm.DB) (bool, int64, error) {
 
 	var inbound_ids []int
 	var inbounds []*model.Inbound
-	needRestart := false
 	var clientsToAdd []struct {
 		protocol string
 		tag      string
@@ -1147,25 +1146,22 @@ func (s *InboundService) autoRenewClients(tx *gorm.DB) (bool, int64, error) {
 	}
 	if p != nil {
 		if err1 = s.xrayApi.Init(p.GetAPIPort()); err1 != nil {
-			logger.Warning("Unable to init xray api:", err1)
-			needRestart = true
+			logger.Debug("Unable to init xray api for renew:", err1)
 		} else {
 			for _, clientToAdd := range clientsToAdd {
 				err1 = s.xrayApi.AddUser(clientToAdd.protocol, clientToAdd.tag, clientToAdd.client)
 				if err1 != nil {
-					logger.Warning("Unable to add renewed client by api:", err1)
-					needRestart = true
+					logger.Debug("Unable to add renewed client by api:", err1)
 				}
 			}
 			s.xrayApi.Close()
 		}
 	}
-	return needRestart, int64(len(traffics)), nil
+	return false, int64(len(traffics)), nil
 }
 
 func (s *InboundService) disableInvalidInbounds(tx *gorm.DB) (bool, int64, error) {
 	now := time.Now().Unix() * 1000
-	needRestart := false
 
 	if p != nil {
 		var tags []string
@@ -1178,16 +1174,14 @@ func (s *InboundService) disableInvalidInbounds(tx *gorm.DB) (bool, int64, error
 		}
 		if len(tags) > 0 {
 			if err1 := s.xrayApi.Init(p.GetAPIPort()); err1 != nil {
-				logger.Warning("Unable to init xray api:", err1)
-				needRestart = true
+				logger.Debug("Unable to init xray api for inbound disable:", err1)
 			} else {
 				for _, tag := range tags {
 					err1 := s.xrayApi.DelInbound(tag)
 					if err1 == nil {
 						logger.Debug("Inbound disabled by api:", tag)
 					} else {
-						logger.Warning("Error in disabling inbound by api:", err1)
-						needRestart = true
+						logger.Debug("Inbound disable api (will fix on next restart):", tag)
 					}
 				}
 				s.xrayApi.Close()
@@ -1200,7 +1194,7 @@ func (s *InboundService) disableInvalidInbounds(tx *gorm.DB) (bool, int64, error
 		Update("enable", false)
 	err := result.Error
 	count := result.RowsAffected
-	return needRestart, count, err
+	return false, count, err
 }
 
 func (s *InboundService) disableInvalidClients(tx *gorm.DB) (bool, int64, error) {
@@ -1223,20 +1217,14 @@ func (s *InboundService) disableInvalidClients(tx *gorm.DB) (bool, int64, error)
 		}
 		if len(results) > 0 {
 			if err1 := s.xrayApi.Init(p.GetAPIPort()); err1 != nil {
-				logger.Warning("Unable to init xray api:", err1)
-				needRestart = true
+				logger.Debug("Unable to init xray api for client disable:", err1)
 			} else {
 				for _, result := range results {
 					err1 := s.xrayApi.RemoveUser(result.Tag, result.Email)
 					if err1 == nil {
 						logger.Debug("Client disabled by api:", result.Email)
 					} else {
-						if strings.Contains(err1.Error(), fmt.Sprintf("User %s not found.", result.Email)) {
-							logger.Debug("User is already disabled. Nothing to do more...")
-						} else {
-							logger.Warning("Error in disabling client by api:", err1)
-							needRestart = true
-						}
+						logger.Debug("Client disable api (will fix on next restart):", result.Email)
 					}
 				}
 				s.xrayApi.Close()
