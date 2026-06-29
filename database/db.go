@@ -96,8 +96,8 @@ func InitDB(dbPath string) error {
 	if err != nil {
 		return err
 	}
-	sqlDB.SetMaxOpenConns(2)
-	sqlDB.SetMaxIdleConns(2)
+	sqlDB.SetMaxOpenConns(1)
+	sqlDB.SetMaxIdleConns(1)
 
 	// Set pragmas AFTER opening connection
 	db.Exec("PRAGMA busy_timeout = 60000")
