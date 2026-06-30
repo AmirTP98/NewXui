@@ -91,6 +91,18 @@ func InitDB(dbPath string) error {
 	db.Exec("PRAGMA busy_timeout = 5000")
 	db.Exec("PRAGMA foreign_keys = OFF")
 
+	// IMPORTANT: journal_mode is stored in the db file's own header, not just
+	// a runtime setting. WAL was briefly enabled in an earlier revision and
+	// caused SQLITE_IOERR_SHORT_READ (522) on this server's filesystem. Simply
+	// no longer issuing "PRAGMA journal_mode=WAL" does NOT revert a file that
+	// was already converted to WAL format — SQLite auto-detects WAL from the
+	// file header and keeps using it (with -wal/-shm sidecars) regardless of
+	// what the app requests. This explicitly forces the file back to the
+	// default rollback-journal format. No-op if already in that mode.
+	if res := db.Exec("PRAGMA journal_mode=DELETE;"); res.Error != nil {
+		logger.Warning("Failed to force journal_mode=DELETE on main DB:", res.Error)
+	}
+
 	err = initUser()
 	if err != nil {
 		return err

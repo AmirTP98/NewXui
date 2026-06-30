@@ -47,6 +47,11 @@ func InitMirrorsDB() error {
 			return
 		}
 		gdb.Exec("PRAGMA busy_timeout = 5000")
+		// Force rollback-journal format — see comment in database/db.go InitDB.
+		// mirrors.db was also briefly created/used while WAL mode was active.
+		if res := gdb.Exec("PRAGMA journal_mode=DELETE;"); res.Error != nil {
+			logger.Warning("Failed to force journal_mode=DELETE on mirrors.db:", res.Error)
+		}
 		if err := gdb.AutoMigrate(&MirrorTraffic{}); err != nil {
 			initErr = err
 			return
