@@ -410,16 +410,27 @@ func (a *LocationController) setSyncInterval(c *gin.Context) {
 }
 
 func (a *LocationController) getMirrorTrafficMode(c *gin.Context) {
-	jsonObj(c, (&service.SettingService{}).GetMirrorTrafficMode(), nil)
+	// Prevent any intermediary (browser/proxy) from serving a stale cached
+	// value — this setting must always reflect the current DB state.
+	c.Header("Cache-Control", "no-store")
+	mode := (&service.SettingService{}).GetMirrorTrafficMode()
+	logger.Debug("getMirrorTrafficMode: returning ", mode)
+	jsonObj(c, mode, nil)
 }
 
 func (a *LocationController) setMirrorTrafficMode(c *gin.Context) {
 	mode := c.PostForm("mode")
+	logger.Debug("setMirrorTrafficMode: received mode=", mode)
 	if mode != "inline" && mode != "external" {
 		jsonMsg(c, "set mirror traffic mode", common.NewError("mode must be 'inline' or 'external'"))
 		return
 	}
 	settingSvc := service.SettingService{}
 	err := settingSvc.SetMirrorTrafficMode(mode)
+	if err != nil {
+		logger.Warning("setMirrorTrafficMode: save failed:", err)
+	} else {
+		logger.Info("setMirrorTrafficMode: saved mode=", mode)
+	}
 	jsonMsg(c, "set mirror traffic mode", err)
 }
