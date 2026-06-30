@@ -14,6 +14,16 @@
             <a-spin :spinning="spinning" :delay="500" tip='{{ i18n "loading"}}'>
                 <a-space direction="vertical" style="width:100%">
 
+                    <a-card class="loc-card" hoverable title='{{ i18n "pages.settings.mirrorTrafficMode" }}'>
+                        <p>{{ i18n "pages.settings.mirrorTrafficModeDesc" }}</p>
+                        <a-select v-model="mirrorTrafficMode" style="width:280px; margin-right: 10px"
+                                  :dropdown-class-name="themeSwitcher.currentTheme">
+                            <a-select-option value="inline">{{ i18n "pages.settings.mirrorTrafficModeInline" }}</a-select-option>
+                            <a-select-option value="external">{{ i18n "pages.settings.mirrorTrafficModeExternal" }}</a-select-option>
+                        </a-select>
+                        <a-button type="primary" @click="saveMirrorTrafficMode" :loading="mirrorModeSaving">{{ i18n "pages.locations.save" }}</a-button>
+                    </a-card>
+
                     <a-card class="loc-card" hoverable title='{{ i18n "pages.reality.sourceInbounds" }}'>
                         <p>{{ i18n "pages.reality.sourceDesc" }}</p>
                         <a-select mode="multiple" show-search option-filter-prop="children"
@@ -129,6 +139,8 @@
             bulkDest: '',
             bulkSni: '',
             bulkLoading: false,
+            mirrorTrafficMode: 'inline',
+            mirrorModeSaving: false,
             columns: [
                 { title: 'Remark', key: 'remark', scopedSlots: { customRender: 'remark' } },
                 { title: 'Master', key: 'master', scopedSlots: { customRender: 'master' } },
@@ -146,6 +158,16 @@
             async getInbounds() {
                 const msg = await HttpUtil.get('/xui/API/inbounds/');
                 if (msg.success) this.inbounds = msg.obj || [];
+            },
+            async getMirrorTrafficMode() {
+                const msg = await HttpUtil.get('/xui/API/locations/mirrorTrafficMode');
+                if (msg.success) this.mirrorTrafficMode = msg.obj || 'inline';
+            },
+            async saveMirrorTrafficMode() {
+                this.mirrorModeSaving = true;
+                const msg = await HttpUtil.post('/xui/API/locations/mirrorTrafficMode', { mode: this.mirrorTrafficMode });
+                this.mirrorModeSaving = false;
+                if (msg.success) this.$message.success('{{ i18n "pages.locations.save" }}');
             },
             async getRealities() {
                 const msg = await HttpUtil.get('/xui/API/locations/?type=reality');
@@ -217,7 +239,7 @@
         },
         async mounted() {
             this.spinning = true;
-            await Promise.all([this.getInbounds(), this.getRealities()]);
+            await Promise.all([this.getInbounds(), this.getRealities(), this.getMirrorTrafficMode()]);
             this.spinning = false;
         },
     });

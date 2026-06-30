@@ -30,7 +30,10 @@ func GetMirrorsDBPath() string {
 	return path.Join(config.GetDBFolderPath(), "mirrors.db")
 }
 
-// InitMirrorsDB opens (or creates) mirrors.db with WAL mode.
+// InitMirrorsDB opens (or creates) mirrors.db.
+// WAL mode is intentionally NOT enabled — it caused SQLITE_IOERR (522) on
+// this server's filesystem. busy_timeout + the in-process RWMutex below are
+// what keep concurrent reads/writes safe instead.
 // Idempotent — safe to call multiple times.
 func InitMirrorsDB() error {
 	var initErr error
@@ -43,8 +46,6 @@ func InitMirrorsDB() error {
 			initErr = err
 			return
 		}
-		gdb.Exec("PRAGMA journal_mode = WAL")
-		gdb.Exec("PRAGMA synchronous = NORMAL")
 		gdb.Exec("PRAGMA busy_timeout = 5000")
 		if err := gdb.AutoMigrate(&MirrorTraffic{}); err != nil {
 			initErr = err

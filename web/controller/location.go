@@ -9,6 +9,7 @@ import (
 	"github.com/alireza0/x-ui/database"
 	"github.com/alireza0/x-ui/database/model"
 	"github.com/alireza0/x-ui/logger"
+	"github.com/alireza0/x-ui/util/common"
 	"github.com/alireza0/x-ui/util/random"
 	"github.com/alireza0/x-ui/web/service"
 	"github.com/alireza0/x-ui/web/session"
@@ -406,4 +407,19 @@ func (a *LocationController) setSyncInterval(c *gin.Context) {
 	}
 	err = a.locationService.SetSyncInterval(seconds)
 	jsonMsg(c, "set sync interval", err)
+}
+
+func (a *LocationController) getMirrorTrafficMode(c *gin.Context) {
+	jsonObj(c, (&service.SettingService{}).GetMirrorTrafficMode(), nil)
+}
+
+func (a *LocationController) setMirrorTrafficMode(c *gin.Context) {
+	mode := c.PostForm("mode")
+	if mode != "inline" && mode != "external" {
+		jsonMsg(c, "set mirror traffic mode", common.NewError("mode must be 'inline' or 'external'"))
+		return
+	}
+	settingSvc := service.SettingService{}
+	err := settingSvc.SetMirrorTrafficMode(mode)
+	jsonMsg(c, "set mirror traffic mode", err)
 }

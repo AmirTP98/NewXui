@@ -220,6 +220,11 @@ func (s *SettingService) GetMirrorTrafficMode() string {
 	return mode
 }
 
+// SetMirrorTrafficMode updates the mirror traffic attribution mode.
+func (s *SettingService) SetMirrorTrafficMode(mode string) error {
+	return s.saveSetting("mirrorTrafficMode", mode)
+}
+
 func (s *SettingService) getInt(key string) (int, error) {
 	str, err := s.getString(key)
 	if err != nil {
