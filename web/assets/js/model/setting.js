@@ -40,6 +40,8 @@ class AllSetting {
 
         this.timeLocation = "Asia/Tehran";
 
+        this.mirrorTrafficMode = "inline";
+
         if (data == null) {
             return
         }

@@ -143,6 +143,10 @@
                                     <setting-list-item type="text" title='{{ i18n "pages.settings.timeZone"}}'
                                         desc='{{ i18n "pages.settings.timeZoneDesc"}}'
                                         v-model="allSetting.timeLocation"></setting-list-item>
+                                    <setting-list-item type="select" title='{{ i18n "pages.settings.mirrorTrafficMode"}}'
+                                        desc='{{ i18n "pages.settings.mirrorTrafficModeDesc"}}'
+                                        :options="mirrorTrafficModeOptions"
+                                        v-model="allSetting.mirrorTrafficMode"></setting-list-item>
                                     <a-list-item>
                                         <a-row style="padding: 20px">
                                             <a-col :lg="24" :xl="12">
@@ -475,6 +479,10 @@
                 lang: getLang(),
                 remarkModels: { i: 'Inbound', e: 'Email', o: 'Other' },
                 remarkSeparators: [' ', '-', '_', '@', ':', '~', '|', ',', '.', '/'],
+                mirrorTrafficModeOptions: [
+                    { value: 'inline', label: '{{ i18n "pages.settings.mirrorTrafficModeInline" }}' },
+                    { value: 'external', label: '{{ i18n "pages.settings.mirrorTrafficModeExternal" }}' }
+                ],
                 remarkSample: '',
                 defaultFragment: {
                     packets: "tlshello",

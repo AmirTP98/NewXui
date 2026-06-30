@@ -20,6 +20,11 @@
             <template v-else-if="type === 'switch'">
                 <a-switch :checked="value" @change="value => $emit('input', value)"></a-switch>
             </template>
+            <template v-else-if="type === 'select'">
+                <a-select :value="value" @change="value => $emit('input', value)" style="width: 100%;">
+                    <a-select-option v-for="opt in options" :key="opt.value" :value="opt.value">[[ opt.label ]]</a-select-option>
+                </a-select>
+            </template>
         </a-col>
     </a-row>
 </a-list-item>
@@ -28,8 +33,9 @@
 {{define "component/setting"}}
 <script>
     Vue.component('setting-list-item', {
-        props: ["type", "title", "desc", "value", "min", "max", "step", "placeholder"],
+        props: ["type", "title", "desc", "value", "min", "max", "step", "placeholder", "options"],
         template: `{{template "component/settingListItem"}}`,
+        delimiters: ['[[', ']]'],
     });
 </script>
 {{end}}
